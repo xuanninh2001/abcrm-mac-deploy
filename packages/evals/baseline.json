@@ -1,0 +1,10 @@
+{
+  "i1.mapping_accuracy": 0.9949,
+  "s2.title_precision": 1,
+  "s2.title_recall": 1,
+  "w1.validator_agreement": 1,
+  "w1.avoid_violations_passed": 0,
+  "injection.hidden_text_stripped": 1,
+  "injection.visible_text_kept": 1,
+  "injection.quote_guard": 1
+}

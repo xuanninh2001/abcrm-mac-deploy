@@ -1,0 +1,22 @@
+{
+  "name": "@abcrm/setup",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/qualification": "workspace:*",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  }
+}

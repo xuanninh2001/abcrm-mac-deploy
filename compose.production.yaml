@@ -1,0 +1,127 @@
+name: abcrm
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_DATABASE_URL: postgresql://abcrm_app_user:${APP_DB_PASSWORD:?required}@postgres:5432/abcrm
+  ABCRM_KEY_PROVIDER: secret
+  ABCRM_MASTER_KEY: ${ABCRM_MASTER_KEY:?required}
+  ABCRM_PLATFORM_HMAC_KEY: ${ABCRM_PLATFORM_HMAC_KEY:?required}
+  ABCRM_PLATFORM_CACHE_KEY: ${ABCRM_PLATFORM_CACHE_KEY:?required}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: abcrm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d abcrm"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    build:
+      context: .
+      target: runtime
+    image: abcrm-runtime:local
+    init: true
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?required}@postgres:5432/abcrm
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?required}
+      GLOBAL_DB_PASSWORD: ${GLOBAL_DB_PASSWORD:?required}
+      DBOS_DB_PASSWORD: ${DBOS_DB_PASSWORD:?required}
+    command: [node, --import, tsx, packages/db/scripts/bootstrap-container.ts]
+
+  api:
+    image: abcrm-runtime:local
+    build:
+      context: .
+      target: runtime
+    init: true
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+      HOST: 0.0.0.0
+      PORT: "3000"
+      WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:?required}
+      WORKOS_API_KEY: ${WORKOS_API_KEY:?required}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    image: abcrm-runtime:local
+    build:
+      context: .
+      target: runtime
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+      GLOBAL_DATABASE_URL: postgresql://abcrm_global_user:${GLOBAL_DB_PASSWORD:?required}@postgres:5432/abcrm
+      DBOS_SYSTEM_DATABASE_URL: postgresql://abcrm_dbos_user:${DBOS_DB_PASSWORD:?required}@postgres:5432/abcrm_dbos
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY:-}
+      ABCRM_BOT_UA: ${ABCRM_BOT_UA:-ABCRMBot/0.1}
+      POSTMARK_SERVER_TOKEN: ${POSTMARK_SERVER_TOKEN:-}
+      NOTIFY_FROM_EMAIL: ${NOTIFY_FROM_EMAIL:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+    command: [pnpm, --filter, "@abcrm/worker", start]
+
+  web:
+    image: abcrm-web:local
+    build:
+      context: .
+      target: web
+    init: true
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      ABCRM_API_URL: http://api:3000
+      ABCRM_WEB_SESSION_SECRET: ${ABCRM_WEB_SESSION_SECRET:?required}
+      WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:?required}
+      WORKOS_API_KEY: ${WORKOS_API_KEY:?required}
+      WORKOS_REDIRECT_URI: https://${APP_DOMAIN:-aurora.dbmediagroups.com}/auth/callback
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: [tunnel]
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    command: [tunnel, --no-autoupdate, run]
+
+volumes:
+  pgdata:

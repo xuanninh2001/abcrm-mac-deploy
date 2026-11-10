@@ -1,0 +1,17 @@
+{
+  "name": "@abcrm/crypto",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "tldts": "6.1.86",
+    "@aws-sdk/client-kms": "3.1156.0"
+  }
+}

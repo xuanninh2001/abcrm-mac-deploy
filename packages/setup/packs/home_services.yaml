@@ -1,0 +1,205 @@
+# ABCRM Vertical Pack — Home Services v1 (data-lead buyers, US)
+# Same structure as insurance.yaml (docs/06-vertical-packs.md §2.4). Tenants clone and customize.
+kind: VerticalPack
+key: home_services
+version: 1
+status: draft            # published after eval gates in test-plan.md §5 pass (golden-home-100)
+
+taxonomy:
+  lead_types:
+    - { key: solar,          label: "Solar" }
+    - { key: roofing,        label: "Roofing" }
+    - { key: hvac,           label: "HVAC" }
+    - { key: windows_doors,  label: "Windows & Doors" }
+    - { key: bath_remodel,   label: "Bath Remodel" }
+    - { key: kitchen_remodel, label: "Kitchen Remodel" }
+    - { key: home_warranty,  label: "Home Warranty" }
+    - { key: pest_control,   label: "Pest Control" }
+    - { key: gutters,        label: "Gutters" }
+    - { key: walk_in_tubs,   label: "Walk-in Tubs" }
+  buyer_types: [direct_brand, aggregator, affiliate_network, ping_post_exchange, call_buyer]
+  purchase_formats: [data_lead, live_transfer, appointment]
+  delivery_methods: [ping_post, direct_post, batch]
+
+signals:
+  web_paths: ["/partners", "/dealers", "/dealer-program", "/become-a-dealer", "/affiliates", "/publishers", "/lead-vendors", "/careers", "/service-areas"]
+  tech:
+    - trustedform
+    - jornaya
+    - leadspedia
+    - boberdoo
+    - leadconduit
+    - phonexa
+    - everflow
+    - ringba
+    - retreaver
+  text_positive: ["lead vendors", "we buy leads", "exclusive leads", "homeowner leads", "ping post", "posting specs", "dealer program", "become a partner", "publisher program", "service areas"]
+  text_negative: ["we sell leads", "leads for contractors", "buy leads from us", "pay per lead for contractors", "get more jobs"]   # lead sellers to contractors
+
+contact_titles:
+  primary: ["Lead Acquisition Manager", "Director of Partnerships", "Partner Marketing Manager", "Affiliate Manager", "Director of Marketing"]
+  secondary: ["VP Marketing", "VP Sales", "Dealer Network Manager", "Founder", "CEO"]
+  synonyms:
+    affiliate_manager: ["affiliate mgr", "publisher manager", "vendor manager", "lead vendor manager"]
+    partnerships_director: ["director, partnerships", "head of partnerships", "partner development director", "channel partnerships"]
+    lead_acquisition: ["lead buyer", "lead procurement", "demand generation manager", "media buyer", "lead generation manager"]
+
+query_templates:
+  - '"{lead_type_label} leads" "lead vendors"'
+  - '"{lead_type_label}" "we buy leads" homeowners'
+  - '"{lead_type_label}" "posting specs" "ping post"'
+  - '"{lead_type_label}" "exclusive leads" "publishers"'
+  - '"lead acquisition manager" "{lead_type_label}" jobs'
+  - '"TrustedForm" "{lead_type_label}" leads "vendors"'
+
+ipp_templates:
+  - name: "Solar data-lead buyers"
+    lead_types: [solar]
+    buyer_types: [direct_brand, aggregator, ping_post_exchange]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    contact_titles_from: primary
+    playbook: solar-buyers
+    notes: "Solar buyers usually filter by state, utility and homeowner status; keep service area criteria unknown-neutral until a rep checks."
+  - name: "Roofing & exterior data-lead buyers"
+    lead_types: [roofing, windows_doors, gutters]
+    buyer_types: [direct_brand, aggregator, ping_post_exchange]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: home-improvement-buyers
+  - name: "Remodel & HVAC data-lead buyers"
+    lead_types: [bath_remodel, kitchen_remodel, hvac, walk_in_tubs]
+    buyer_types: [direct_brand, aggregator, ping_post_exchange]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: home-improvement-buyers
+
+criteria_library:
+  us_operating:
+    name: Operates in the US
+    description: "The company operates in the United States."
+    evaluation: rule
+    rule: { "==": [ { "var": "account.hq_country" }, "US" ] }
+    evidence_required: false
+    unknown_policy: neutral
+  not_competitor:
+    name: Not a competing lead seller
+    description: "Fail only if evidence shows the company primarily sells home-improvement leads to contractors."
+    evaluation: ai_judged
+    evidence_required: false
+    hints: [home, about]
+  not_flagged:
+    name: Not blocklisted or existing buyer
+    description: "The account is not flagged competitor, existing_buyer or do_not_contact."
+    evaluation: rule
+    rule: { "none": [ { "var": "account.flags" }, { "in": [ { "var": "" }, ["competitor", "existing_buyer", "do_not_contact"] ] } ] }
+    evidence_required: false
+  buys_matching_lead_types:
+    name: Buys our lead types
+    description: "Buys residential solar leads."
+    evaluation: ai_judged
+    hints: [partners, publishers, careers]
+  buys_data_leads_from_publishers:
+    name: Buys data leads from external publishers
+    description: "Evidence that the company buys homeowner data leads from outside publishers or lead vendors (ping-post, direct post or a vendor program)."
+    evaluation: ai_judged
+    hints: [partners, publishers]
+  uses_lead_distribution_tech:
+    name: Uses lead distribution / consent tech
+    description: "TrustedForm, Jornaya, LeadsPedia, boberdoo, LeadConduit or Phonexa detected on the site."
+    evaluation: rule
+    rule: { "some": [ { "var": "account.tech_signal_keys" }, { "in": [ { "var": "" }, ["trustedform", "jornaya", "leadspedia", "boberdoo", "leadconduit", "phonexa"] ] } ] }
+    evidence_required: false
+  multi_state_service_area:
+    name: Serves several states
+    description: "Evidence the company installs or serves customers in more than one state (service area pages, dealer network, state list)."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [about, partners]
+  homeowner_filters_fit:
+    name: Lead filters fit our supply
+    description: "Stated lead filters (homeowner only, credit score, roof age, utility, ZIP list) are ones our traffic can meet; fail only when a published filter clearly excludes it."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [publishers, partners]
+  accepts_offshore_publishers:
+    name: Accepts publishers outside the US
+    description: "Evidence the company works with publishers or call centers outside the US (including offshore appointment setting)."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [partners, publishers, careers]
+  hiring_lead_roles:
+    name: Hiring lead acquisition or appointment roles
+    description: "Open roles for lead acquisition, partner marketing or appointment setting."
+    evaluation: ai_judged
+    hints: [careers]
+  requires_consent_certs:
+    name: Requires TrustedForm/Jornaya
+    description: "Vendor requirements mention TrustedForm or Jornaya certificates or explicit TCPA consent."
+    evaluation: ai_judged
+    hints: [publishers, compliance]
+  size_fit:
+    name: Company size fits
+    description: "Employee range between 11 and 5000."
+    evaluation: rule
+    rule: { "in": [ { "var": "account.employee_range" }, ["11-50", "51-200", "201-500", "501-1000", "1001-5000"] ] }
+    evidence_required: false
+    unknown_policy: neutral
+  no_payment_red_flags:
+    name: No public payment red flags
+    description: "No public reports of late or missing payments to lead vendors or publishers."
+    evaluation: ai_judged
+    unknown_policy: neutral
+
+playbook_templates:
+  solar-buyers:
+    tier_thresholds: { A: 75, B: 55, C: 35 }
+    card_min_tier: B
+    criteria:
+      - { key: us_operating,                    kind: knockout,  evaluation: rule }
+      - { key: not_competitor,                  kind: knockout,  evaluation: ai_judged }
+      - { key: not_flagged,                     kind: knockout,  evaluation: rule }
+      - { key: buys_matching_lead_types,        kind: must_have, evaluation: ai_judged }
+      - { key: buys_data_leads_from_publishers, kind: must_have, evaluation: ai_judged }
+      - { key: multi_state_service_area,        kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: homeowner_filters_fit,           kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: requires_consent_certs,          kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: uses_lead_distribution_tech,     kind: scored,    evaluation: rule,      weight: 10 }
+      - { key: accepts_offshore_publishers,     kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: hiring_lead_roles,               kind: scored,    evaluation: ai_judged, weight: 5 }
+      - { key: size_fit,                        kind: scored,    evaluation: rule,      weight: 10 }
+      - { key: no_payment_red_flags,            kind: scored,    evaluation: ai_judged, weight: 15 }
+  home-improvement-buyers:
+    extends: solar-buyers
+    overrides:
+      buys_matching_lead_types: { description: "Buys homeowner leads for roofing, windows/doors, gutters, remodeling, HVAC or walk-in tubs." }
+      homeowner_filters_fit: { description: "Stated lead filters (homeowner only, project type, timeframe, ZIP list) are ones our traffic can meet; fail only when a published filter clearly excludes it." }
+
+messaging:
+  angles:
+    - "TrustedForm certificate on every lead; consent names the buyer"
+    - "Homeowner-verified leads filtered to your ZIP list before posting"
+    - "Start with a small capped test in one or two service areas"
+    - "Posting via your ping-post/direct-post spec; we adapt to your fields"
+  avoid: ["guaranteed", "free solar", "government program", "no cost to you", "cheapest", "unlimited leads", "risk-free", "100% conversion"]
+  cta_options: ["Open to a 50-lead test in one service area this month?", "Worth a 15-minute call to compare posting specs?"]
+
+buyer_compliance_questions:
+  - { q: "Do you provide TrustedForm or Jornaya certificates?",           supply_field: compliance_assets.trustedform }
+  - { q: "Does the consent language name us as a seller?",                 supply_field: compliance_assets.tcpa_seller_naming }
+  - { q: "Do you scrub against DNC lists?",                                supply_field: compliance_assets.dnc_scrub }
+  - { q: "How do you verify homeowner status?",                            supply_field: traffic_sources }
+  - { q: "Which states and ZIP codes can you cover?",                      supply_field: states }
+
+compliance_notes:
+  - "Content must not promise savings, rebates, tax credits or 'free' installations, and must not imply a government program."
+  - "Buyers often require state-by-state contractor licensing on their side; do not speak for the buyer about installations or financing."
+
+evals:
+  dataset: evals/home_services/v1
+  gates:
+    s1_precision_lead_buyer: 0.80
+    s1_competitor_recall: 0.85
+    q1_tier_a_precision: 0.70
+    q1_unverified_quote_rate_pre_filter_max: 0.05
+    w1_factuality: 1.0

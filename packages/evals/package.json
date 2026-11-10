@@ -1,0 +1,23 @@
+{
+  "name": "@abcrm/evals",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "eval": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@abcrm/contactdata": "workspace:*",
+    "@abcrm/importer": "workspace:*",
+    "@abcrm/inbox": "workspace:*",
+    "@abcrm/llm": "workspace:*",
+    "@abcrm/qualification": "workspace:*",
+    "@abcrm/setup": "workspace:*",
+    "@abcrm/sourcing": "workspace:*"
+  }
+}

@@ -1,0 +1,29 @@
+name: Evals (nightly, live model)
+
+# Q1 on the golden sets with the real model (test-plan.md §5.3). Needs the ANTHROPIC_API_KEY secret and a
+# golden set: EVAL_GOLDEN_DIR points at a private checkout, otherwise the Q1 suite reports "skipped".
+on:
+  schedule:
+    - cron: "17 19 * * *"   # 02:17 in Vietnam
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      EVAL_GOLDEN_DIR: ${{ vars.EVAL_GOLDEN_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @abcrm/evals eval --live --verbose --report eval-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: packages/evals/eval-report.json

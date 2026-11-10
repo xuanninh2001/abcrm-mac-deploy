@@ -1,0 +1,33 @@
+{
+  "name": "@abcrm/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/contactdata": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crm": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/importer": "workspace:*",
+    "@abcrm/inbox": "workspace:*",
+    "@abcrm/notify": "workspace:*",
+    "@abcrm/qualification": "workspace:*",
+    "@abcrm/setup": "workspace:*",
+    "@abcrm/sourcing": "workspace:*",
+    "@hono/node-server": "1.19.17",
+    "hono": "4.13.13",
+    "jose": "5.10.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@abcrm/llm": "workspace:*"
+  }
+}

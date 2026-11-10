@@ -1,0 +1,24 @@
+{
+  "name": "@abcrm/inbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/llm": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@abcrm/crm": "workspace:*",
+    "@abcrm/crypto": "workspace:*"
+  }
+}

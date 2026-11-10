@@ -1,0 +1,30 @@
+{
+  "name": "@abcrm/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "tsx src/worker.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/billing": "workspace:*",
+    "@abcrm/contactdata": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/inbox": "workspace:*",
+    "@abcrm/llm": "workspace:*",
+    "@abcrm/notify": "workspace:*",
+    "@abcrm/qualification": "workspace:*",
+    "@abcrm/setup": "workspace:*",
+    "@abcrm/sourcing": "workspace:*",
+    "@dbos-inc/dbos-sdk": "5.3.0"
+  },
+  "devDependencies": {
+    "@abcrm/crm": "workspace:*"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@abcrm/llm",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/core": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@anthropic-ai/sdk": "0.135.0",
+    "zod": "4.6.7"
+  }
+}

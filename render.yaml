@@ -1,0 +1,51 @@
+# Render Blueprint (ADR-008: Render US + Neon). One-command deploy: push to main, or "Apply Blueprint" once.
+# Secrets are `sync: false`: fill them in the Render dashboard (env group abcrm-shared + per-service values).
+# Free demo: web + API on Render; worker runs locally; migrations run manually.
+services:
+  - type: web
+    name: abcrm-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false
+    startCommand: pnpm --filter @abcrm/app start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_DATABASE_URL          # Neon, role abcrm_app_user (NO BYPASSRLS)
+        sync: false
+      - key: ABCRM_KEY_PROVIDER
+        value: secret
+      - key: ABCRM_MASTER_KEY          # 32 random bytes, base64; same key for API and worker
+        sync: false
+      - key: ABCRM_PLATFORM_HMAC_KEY
+        sync: false
+      - key: ABCRM_PLATFORM_CACHE_KEY
+        sync: false
+      - key: WORKOS_CLIENT_ID
+        sync: false
+      - key: WORKOS_API_KEY
+        sync: false
+
+  - type: web
+    name: abcrm-web
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @abcrm/web build
+    startCommand: pnpm --filter @abcrm/web exec next start -p $PORT
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ABCRM_API_URL             # the API's public or private URL
+        sync: false
+      - key: ABCRM_WEB_SESSION_SECRET  # 32 bytes base64; rotating it signs everyone out
+        sync: false
+      - key: WORKOS_CLIENT_ID
+        sync: false
+      - key: WORKOS_API_KEY
+        sync: false
+      - key: WORKOS_REDIRECT_URI       # https://<web host>/auth/callback
+        sync: false

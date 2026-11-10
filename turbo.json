@@ -1,0 +1,8 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
+    "typecheck": { "dependsOn": ["^typecheck"] },
+    "test": { "dependsOn": ["^typecheck"], "env": ["DATABASE_URL", "APP_DATABASE_URL", "ABCRM_DEV_MASTER_KEY", "ABCRM_GLOBAL_HMAC_KEY"] }
+  }
+}

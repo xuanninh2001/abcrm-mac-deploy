@@ -1,0 +1,73 @@
+// S2 seed set (titles, test-plan.md §5.1): titles seen in provider samples, labelled by whether a rep would want them for the pack's primary titles.
+{"pack": "insurance", "title": "Affiliate Manager", "relevant": true}
+{"pack": "insurance", "title": "Senior Affiliate Manager", "relevant": true}
+{"pack": "insurance", "title": "Affiliate Mgr", "relevant": true}
+{"pack": "insurance", "title": "Director of Partnerships", "relevant": true}
+{"pack": "insurance", "title": "Director, Partnerships", "relevant": true}
+{"pack": "insurance", "title": "Head of Partnerships", "relevant": true}
+{"pack": "insurance", "title": "Lead Acquisition Manager", "relevant": true}
+{"pack": "insurance", "title": "Head of Media Buying", "relevant": true}
+{"pack": "insurance", "title": "Director of Lead Generation", "relevant": true}
+{"pack": "insurance", "title": "Publisher Development Manager", "relevant": true}
+{"pack": "insurance", "title": "Vendor Manager", "relevant": true}
+{"pack": "insurance", "title": "Lead Buyer", "relevant": true}
+{"pack": "insurance", "title": "Affiliate Partnerships Manager", "relevant": true}
+{"pack": "insurance", "title": "Sr. Director of Partnerships", "relevant": true}
+{"pack": "insurance", "title": "Lead Procurement Manager", "relevant": true}
+{"pack": "insurance", "title": "National Director of Lead Generation", "relevant": true}
+{"pack": "insurance", "title": "Licensed Insurance Agent", "relevant": false}
+{"pack": "insurance", "title": "Software Engineer", "relevant": false}
+{"pack": "insurance", "title": "Claims Adjuster", "relevant": false}
+{"pack": "insurance", "title": "HR Generalist", "relevant": false}
+{"pack": "insurance", "title": "Customer Service Representative", "relevant": false}
+{"pack": "insurance", "title": "Underwriter", "relevant": false}
+{"pack": "insurance", "title": "Accountant", "relevant": false}
+{"pack": "insurance", "title": "Office Manager", "relevant": false}
+{"pack": "insurance", "title": "Sales Agent", "relevant": false}
+{"pack": "insurance", "title": "IT Support Specialist", "relevant": false}
+{"pack": "insurance", "title": "Executive Assistant", "relevant": false}
+{"pack": "insurance", "title": "Recruiter", "relevant": false}
+{"pack": "finance", "title": "Affiliate Partnerships Manager", "relevant": true}
+{"pack": "finance", "title": "Director of Partnerships", "relevant": true}
+{"pack": "finance", "title": "Lead Acquisition Manager", "relevant": true}
+{"pack": "finance", "title": "Performance Partnerships Manager", "relevant": true}
+{"pack": "finance", "title": "Head of Customer Acquisition", "relevant": true}
+{"pack": "finance", "title": "Partner Manager", "relevant": true}
+{"pack": "finance", "title": "Head of Partnerships", "relevant": true}
+{"pack": "finance", "title": "Customer Acquisition Manager", "relevant": true}
+{"pack": "finance", "title": "Affiliate Manager", "relevant": true}
+{"pack": "finance", "title": "Strategic Partnerships Director", "relevant": true}
+{"pack": "finance", "title": "Senior Lead Acquisition Manager", "relevant": true}
+{"pack": "finance", "title": "Media Buying Manager", "relevant": true}
+{"pack": "finance", "title": "Loan Officer", "relevant": false}
+{"pack": "finance", "title": "Debt Consultant", "relevant": false}
+{"pack": "finance", "title": "Software Engineer", "relevant": false}
+{"pack": "finance", "title": "Compliance Analyst", "relevant": false}
+{"pack": "finance", "title": "Tax Preparer", "relevant": false}
+{"pack": "finance", "title": "Customer Success Specialist", "relevant": false}
+{"pack": "finance", "title": "Collections Agent", "relevant": false}
+{"pack": "finance", "title": "Paralegal", "relevant": false}
+{"pack": "finance", "title": "Payroll Specialist", "relevant": false}
+{"pack": "finance", "title": "Data Analyst", "relevant": false}
+{"pack": "home_services", "title": "Lead Acquisition Manager", "relevant": true}
+{"pack": "home_services", "title": "Director of Partnerships", "relevant": true}
+{"pack": "home_services", "title": "Partner Marketing Manager", "relevant": true}
+{"pack": "home_services", "title": "Affiliate Manager", "relevant": true}
+{"pack": "home_services", "title": "Director of Marketing", "relevant": true}
+{"pack": "home_services", "title": "Lead Vendor Manager", "relevant": true}
+{"pack": "home_services", "title": "Head of Partnerships", "relevant": true}
+{"pack": "home_services", "title": "Lead Generation Manager", "relevant": true}
+{"pack": "home_services", "title": "Media Buyer", "relevant": true}
+{"pack": "home_services", "title": "Channel Partnerships", "relevant": true}
+{"pack": "home_services", "title": "Senior Partner Marketing Manager", "relevant": true}
+{"pack": "home_services", "title": "Demand Generation Manager", "relevant": true}
+{"pack": "home_services", "title": "Roofing Installer", "relevant": false}
+{"pack": "home_services", "title": "HVAC Technician", "relevant": false}
+{"pack": "home_services", "title": "Solar Consultant", "relevant": false}
+{"pack": "home_services", "title": "Project Manager", "relevant": false}
+{"pack": "home_services", "title": "Estimator", "relevant": false}
+{"pack": "home_services", "title": "Dispatcher", "relevant": false}
+{"pack": "home_services", "title": "Software Engineer", "relevant": false}
+{"pack": "home_services", "title": "Warehouse Associate", "relevant": false}
+{"pack": "home_services", "title": "Customer Service Representative", "relevant": false}
+{"pack": "home_services", "title": "Electrician", "relevant": false}

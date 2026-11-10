@@ -1,0 +1,16 @@
+{
+  "name": "@abcrm/importer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run" },
+  "dependencies": {
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crm": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "csv-parse": "5.6.0",
+    "exceljs": "4.4.0"
+  }
+}

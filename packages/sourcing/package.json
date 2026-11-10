@@ -1,0 +1,26 @@
+{
+  "name": "@abcrm/sourcing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crm": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/llm": "workspace:*",
+    "@abcrm/setup": "workspace:*",
+    "cheerio": "1.2.0",
+    "robots-parser": "3.0.1",
+    "undici": "6.29.1",
+    "zod": "4.6.7"
+  }
+}

@@ -1,0 +1,191 @@
+# ABCRM Vertical Pack — Insurance v1 (data-lead buyers, US)
+# Template; tenants clone and customize. Finance and Home Services packs reuse this structure.
+kind: VerticalPack
+key: insurance
+version: 1
+status: draft            # published after eval gates in test-plan.md §5 pass
+
+taxonomy:
+  lead_types:
+    - { key: aca_health,     label: "ACA / Health" }
+    - { key: medicare,       label: "Medicare" }
+    - { key: final_expense,  label: "Final Expense" }
+    - { key: life,           label: "Life" }
+    - { key: auto,           label: "Auto" }
+    - { key: home,           label: "Home" }
+    - { key: commercial,     label: "Commercial / SMB" }
+  buyer_types: [direct_brand, aggregator, affiliate_network, ping_post_exchange, call_buyer]
+  purchase_formats: [data_lead, live_transfer, inbound_call, appointment]
+  delivery_methods: [ping_post, direct_post, batch]
+
+signals:
+  web_paths: ["/publishers", "/publisher-program", "/partners", "/lead-vendors", "/vendors", "/affiliates", "/careers", "/compliance"]
+  tech:   # detector keys → patterns live in packages/sourcing/tech-signatures.ts
+    - trustedform
+    - jornaya
+    - leadspedia
+    - boberdoo
+    - everflow
+    - cake
+    - ringba
+    - retreaver
+  text_positive: ["lead vendor", "publisher program", "posting specs", "ping post", "ping/post", "direct post", "we buy leads", "become a partner", "lead suppliers"]
+  text_negative: ["we sell leads", "buy leads from us", "lead marketplace for agents", "purchase aged leads"]   # likely competitor/seller
+
+contact_titles:
+  primary: ["Affiliate Manager", "Director of Partnerships", "Lead Acquisition Manager", "Head of Media Buying", "Director of Lead Generation"]
+  secondary: ["VP Marketing", "VP Growth", "Head of Acquisition", "Founder", "CEO"]
+  synonyms:
+    affiliate_manager: ["affiliate mgr", "affiliate partnerships manager", "publisher manager", "publisher development manager", "vendor manager"]
+    partnerships_director: ["director, partnerships", "head of partnerships", "partner development director"]
+    lead_acquisition: ["lead buyer", "lead procurement", "demand acquisition", "lead sourcing manager"]
+
+query_templates:
+  - '"{lead_type_label} leads" "publishers"'
+  - '"{lead_type_label}" "lead vendors" "posting specs"'
+  - '"become a lead vendor" {lead_type_label} insurance'
+  - '"ping post" "{lead_type_label}" insurance leads buyer'
+  - '"affiliate manager" "{lead_type_label}" insurance jobs'
+  - '"TrustedForm" "{lead_type_label}" "publisher"'
+
+ipp_templates:
+  - name: "ACA & FE data-lead buyers"
+    lead_types: [aca_health, final_expense]
+    buyer_types: [aggregator, direct_brand, ping_post_exchange]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    contact_titles_from: primary
+    playbook: aca-fe-buyers
+  - name: "Medicare data-lead buyers (AEP-ready)"
+    lead_types: [medicare]
+    buyer_types: [aggregator, direct_brand]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: medicare-buyers
+    notes: "Many Medicare buyers restrict offshore traffic — keep 'accepts_offshore_publishers' unknown-neutral and let reps verify."
+  - name: "Auto & Home data-lead buyers"
+    lead_types: [auto, home]
+    buyer_types: [aggregator, ping_post_exchange, direct_brand]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: auto-home-buyers
+
+criteria_library:   # full definitions referenced by playbook_templates (ipp-playbook-format.md §3)
+  us_operating:
+    name: Operates in the US
+    description: "The company operates in the United States."
+    evaluation: rule
+    rule: { "==": [ { "var": "account.hq_country" }, "US" ] }
+    evidence_required: false
+    unknown_policy: neutral
+  not_competitor:
+    name: Not a competing lead seller
+    description: "Fail only if evidence shows the company primarily sells the same lead types to buyers."
+    evaluation: ai_judged
+    evidence_required: false
+    hints: [home, about]
+  not_flagged:
+    name: Not blocklisted or existing buyer
+    description: "The account is not flagged competitor, existing_buyer or do_not_contact."
+    evaluation: rule
+    rule: { "none": [ { "var": "account.flags" }, { "in": [ { "var": "" }, ["competitor", "existing_buyer", "do_not_contact"] ] } ] }
+    evidence_required: false
+  buys_matching_lead_types:
+    name: Buys our lead types
+    description: "Buys ACA/health or final expense leads."
+    evaluation: ai_judged
+    hints: [publishers, partners, careers]
+  buys_data_leads_from_publishers:
+    name: Buys data leads from external publishers
+    description: "Evidence that the company buys data leads from outside publishers (ping-post or direct post)."
+    evaluation: ai_judged
+    hints: [publishers, partners]
+  uses_lead_distribution_tech:
+    name: Uses lead distribution / consent tech
+    description: "TrustedForm, Jornaya, LeadsPedia or boberdoo detected on the site."
+    evaluation: rule
+    rule: { "some": [ { "var": "account.tech_signal_keys" }, { "in": [ { "var": "" }, ["trustedform", "jornaya", "leadspedia", "boberdoo"] ] } ] }
+    evidence_required: false
+  accepts_offshore_publishers:
+    name: Accepts publishers outside the US
+    description: "Evidence the company works with publishers or call centers outside the US."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [publishers, partners, careers]
+  hiring_affiliate_roles:
+    name: Hiring affiliate / lead acquisition roles
+    description: "Open roles for affiliate, publisher or lead acquisition management."
+    evaluation: ai_judged
+    hints: [careers]
+  requires_consent_certs:
+    name: Requires TrustedForm/Jornaya
+    description: "Publisher requirements mention TrustedForm or Jornaya certificates."
+    evaluation: ai_judged
+    hints: [publishers, compliance]
+  size_fit:
+    name: Company size fits
+    description: "Employee range between 11 and 5000."
+    evaluation: rule
+    rule: { "in": [ { "var": "account.employee_range" }, ["11-50", "51-200", "201-500", "501-1000", "1001-5000"] ] }
+    evidence_required: false
+    unknown_policy: neutral
+  no_payment_red_flags:
+    name: No public payment red flags
+    description: "No public reports of late or missing payments to publishers."
+    evaluation: ai_judged
+    unknown_policy: neutral
+
+playbook_templates:
+  aca-fe-buyers:
+    tier_thresholds: { A: 75, B: 55, C: 35 }
+    card_min_tier: B
+    criteria:   # keys from criteria_library; kind/weight set per template
+      - { key: us_operating,                    kind: knockout,  evaluation: rule }
+      - { key: not_competitor,                  kind: knockout,  evaluation: ai_judged }
+      - { key: not_flagged,                     kind: knockout,  evaluation: rule }
+      - { key: buys_matching_lead_types,        kind: must_have, evaluation: ai_judged }
+      - { key: buys_data_leads_from_publishers, kind: must_have, evaluation: ai_judged }
+      - { key: uses_lead_distribution_tech,     kind: scored,    evaluation: rule,      weight: 10 }
+      - { key: accepts_offshore_publishers,     kind: scored,    evaluation: ai_judged, weight: 25 }
+      - { key: hiring_affiliate_roles,          kind: scored,    evaluation: ai_judged, weight: 10 }
+      - { key: requires_consent_certs,          kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: size_fit,                        kind: scored,    evaluation: rule,      weight: 10 }
+      - { key: no_payment_red_flags,            kind: scored,    evaluation: ai_judged, weight: 20 }
+  medicare-buyers:
+    extends: aca-fe-buyers
+    overrides:
+      buys_matching_lead_types: { description: "Buys Medicare (MA/MS/PDP) leads" }
+      accepts_offshore_publishers: { weight: 30 }
+  auto-home-buyers:
+    extends: aca-fe-buyers
+    overrides:
+      buys_matching_lead_types: { description: "Buys auto and/or home insurance leads" }
+
+messaging:
+  angles:
+    - "TrustedForm certificate on every lead; consent names the buyer"
+    - "Start with a small capped test (e.g., 50 leads) — pay only for accepted leads"
+    - "Posting via your ping-post/direct-post spec; we adapt to your fields"
+    - "US-hours QA and fast response despite offshore team"
+  avoid: ["guaranteed", "cheapest", "unlimited leads", "100% conversion", "best rates", "risk-free"]
+  cta_options: ["Open to a 50-lead test this month?", "Worth a 15-minute call to compare specs?"]
+
+buyer_compliance_questions:
+  - { q: "Do you provide TrustedForm or Jornaya certificates?",         supply_field: compliance_assets.trustedform }
+  - { q: "Does the consent language name us as a seller?",               supply_field: compliance_assets.tcpa_seller_naming }
+  - { q: "Do you scrub against DNC lists?",                              supply_field: compliance_assets.dnc_scrub }
+  - { q: "What are your traffic sources?",                               supply_field: traffic_sources }
+  - { q: "Which states can you cover?",                                  supply_field: states }
+
+compliance_notes:
+  - "Content must not quote premiums, compare carriers, or give coverage advice."
+  - "Medicare marketing is heavily regulated (CMS); do not speak for the buyer about Medicare plans."
+
+evals:
+  dataset: evals/insurance/v1
+  gates:   # pack is publishable only if Q1/S1 pass these on this pack
+    s1_precision_lead_buyer: 0.80
+    s1_competitor_recall: 0.85
+    q1_tier_a_precision: 0.70
+    q1_unverified_quote_rate_pre_filter_max: 0.05
+    w1_factuality: 1.0

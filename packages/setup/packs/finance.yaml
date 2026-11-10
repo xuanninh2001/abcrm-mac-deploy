@@ -1,0 +1,210 @@
+# ABCRM Vertical Pack — Finance v1 (data-lead buyers, US)
+# Same structure as insurance.yaml (docs/06-vertical-packs.md §2.2). Tenants clone and customize.
+kind: VerticalPack
+key: finance
+version: 1
+status: draft            # published after eval gates in test-plan.md §5 pass (golden-finance-100)
+
+taxonomy:
+  lead_types:
+    - { key: debt_relief,      label: "Debt Relief" }
+    - { key: personal_loans,   label: "Personal Loans" }
+    - { key: tax_relief,       label: "Tax Relief" }
+    - { key: credit_repair,    label: "Credit Repair" }
+    - { key: mortgage_refi,    label: "Mortgage / Refinance" }
+    - { key: business_funding, label: "Business Funding (MCA / SBA)" }
+  buyer_types: [direct_brand, aggregator, affiliate_network, ping_post_exchange, call_buyer]
+  purchase_formats: [data_lead, live_transfer, inbound_call]
+  delivery_methods: [ping_post, direct_post, batch]
+
+signals:
+  web_paths: ["/partners", "/partner-program", "/affiliates", "/affiliate-program", "/publishers", "/lead-providers", "/careers", "/compliance", "/licenses"]
+  tech:
+    - trustedform
+    - jornaya
+    - leadspedia
+    - boberdoo
+    - leadconduit
+    - phonexa
+    - everflow
+    - cake
+    - tune
+    - ringba
+  text_positive: ["affiliate program", "partner program", "lead providers", "we buy leads", "posting instructions", "ping post", "direct post", "become a partner", "referral partners", "publisher requirements"]
+  text_negative: ["we sell leads", "buy debt leads from us", "aged leads for sale", "lead lists for sale", "exclusive leads for agents"]   # likely competitor/seller
+
+contact_titles:
+  primary: ["Affiliate Partnerships Manager", "Director of Partnerships", "Lead Acquisition Manager", "Performance Partnerships Manager", "Head of Customer Acquisition"]
+  secondary: ["VP Marketing", "VP Growth", "Chief Marketing Officer", "Founder", "CEO"]
+  synonyms:
+    affiliate_manager: ["affiliate mgr", "affiliate manager", "partner manager", "publisher manager", "vendor manager"]
+    partnerships_director: ["director, partnerships", "head of partnerships", "strategic partnerships director", "business development director"]
+    lead_acquisition: ["lead buyer", "lead procurement", "demand acquisition", "customer acquisition manager", "media buying manager"]
+
+query_templates:
+  - '"{lead_type_label}" "affiliate program" leads'
+  - '"{lead_type_label} leads" "lead providers"'
+  - '"{lead_type_label}" "publisher requirements" "TrustedForm"'
+  - '"ping post" "{lead_type_label}" leads buyer'
+  - '"affiliate partnerships manager" "{lead_type_label}" jobs'
+  - '"become a partner" "{lead_type_label}" "leads"'
+
+ipp_templates:
+  - name: "Debt & tax relief data-lead buyers"
+    lead_types: [debt_relief, tax_relief]
+    buyer_types: [direct_brand, aggregator, ping_post_exchange]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    contact_titles_from: primary
+    playbook: debt-tax-buyers
+    notes: "Debt relief buyers face the FTC Telemarketing Sales Rule; expect strict consent and script requirements."
+  - name: "Personal loan data-lead buyers"
+    lead_types: [personal_loans]
+    buyer_types: [direct_brand, aggregator, affiliate_network]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: personal-loan-buyers
+  - name: "Business funding data-lead buyers"
+    lead_types: [business_funding]
+    buyer_types: [direct_brand, aggregator]
+    purchase_formats: [data_lead]
+    payout_models: [cpl]
+    playbook: business-funding-buyers
+
+criteria_library:
+  us_operating:
+    name: Operates in the US
+    description: "The company operates in the United States."
+    evaluation: rule
+    rule: { "==": [ { "var": "account.hq_country" }, "US" ] }
+    evidence_required: false
+    unknown_policy: neutral
+  not_competitor:
+    name: Not a competing lead seller
+    description: "Fail only if evidence shows the company primarily sells the same financial lead types to buyers."
+    evaluation: ai_judged
+    evidence_required: false
+    hints: [home, about]
+  not_flagged:
+    name: Not blocklisted or existing buyer
+    description: "The account is not flagged competitor, existing_buyer or do_not_contact."
+    evaluation: rule
+    rule: { "none": [ { "var": "account.flags" }, { "in": [ { "var": "" }, ["competitor", "existing_buyer", "do_not_contact"] ] } ] }
+    evidence_required: false
+  buys_matching_lead_types:
+    name: Buys our lead types
+    description: "Buys debt relief or tax relief leads."
+    evaluation: ai_judged
+    hints: [partners, publishers, careers]
+  buys_data_leads_from_publishers:
+    name: Buys data leads from external publishers
+    description: "Evidence that the company buys data leads from outside affiliates or publishers (ping-post, direct post or an affiliate program paying per lead)."
+    evaluation: ai_judged
+    hints: [partners, publishers]
+  uses_lead_distribution_tech:
+    name: Uses lead distribution / consent tech
+    description: "TrustedForm, Jornaya, LeadsPedia, boberdoo, LeadConduit or Phonexa detected on the site."
+    evaluation: rule
+    rule: { "some": [ { "var": "account.tech_signal_keys" }, { "in": [ { "var": "" }, ["trustedform", "jornaya", "leadspedia", "boberdoo", "leadconduit", "phonexa"] ] } ] }
+    evidence_required: false
+  states_licensed:
+    name: Licensed or registered where required
+    description: "Public evidence of state licenses or registrations needed for its products (for example an NMLS ID for lenders or state debt-settlement registrations)."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [compliance, about]
+  accepts_offshore_publishers:
+    name: Accepts publishers outside the US
+    description: "Evidence the company works with publishers or call centers outside the US."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [partners, publishers, careers]
+  hiring_affiliate_roles:
+    name: Hiring affiliate / lead acquisition roles
+    description: "Open roles for affiliate, partnership or lead acquisition management."
+    evaluation: ai_judged
+    hints: [careers]
+  requires_consent_certs:
+    name: Requires TrustedForm/Jornaya
+    description: "Publisher requirements mention TrustedForm or Jornaya certificates or explicit TCPA consent."
+    evaluation: ai_judged
+    hints: [publishers, compliance]
+  size_fit:
+    name: Company size fits
+    description: "Employee range between 11 and 5000."
+    evaluation: rule
+    rule: { "in": [ { "var": "account.employee_range" }, ["11-50", "51-200", "201-500", "501-1000", "1001-5000"] ] }
+    evidence_required: false
+    unknown_policy: neutral
+  no_payment_red_flags:
+    name: No public payment red flags
+    description: "No public reports of late or missing payments to affiliates or publishers, and no regulator actions for unpaid partners."
+    evaluation: ai_judged
+    unknown_policy: neutral
+  minimum_debt_fits:
+    name: Lead requirements fit our supply
+    description: "Stated lead requirements (for example minimum unsecured debt, credit score or loan amount) are ones our traffic can meet; fail only when a published minimum clearly excludes it."
+    evaluation: ai_judged
+    unknown_policy: neutral
+    hints: [publishers, partners]
+
+playbook_templates:
+  debt-tax-buyers:
+    tier_thresholds: { A: 75, B: 55, C: 35 }
+    card_min_tier: B
+    criteria:
+      - { key: us_operating,                    kind: knockout,  evaluation: rule }
+      - { key: not_competitor,                  kind: knockout,  evaluation: ai_judged }
+      - { key: not_flagged,                     kind: knockout,  evaluation: rule }
+      - { key: buys_matching_lead_types,        kind: must_have, evaluation: ai_judged }
+      - { key: buys_data_leads_from_publishers, kind: must_have, evaluation: ai_judged }
+      - { key: no_payment_red_flags,            kind: scored,    evaluation: ai_judged, weight: 25 }
+      - { key: requires_consent_certs,          kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: uses_lead_distribution_tech,     kind: scored,    evaluation: rule,      weight: 10 }
+      - { key: accepts_offshore_publishers,     kind: scored,    evaluation: ai_judged, weight: 15 }
+      - { key: states_licensed,                 kind: scored,    evaluation: ai_judged, weight: 10 }
+      - { key: minimum_debt_fits,               kind: scored,    evaluation: ai_judged, weight: 10 }
+      - { key: hiring_affiliate_roles,          kind: scored,    evaluation: ai_judged, weight: 5 }
+      - { key: size_fit,                        kind: scored,    evaluation: rule,      weight: 10 }
+  personal-loan-buyers:
+    extends: debt-tax-buyers
+    overrides:
+      buys_matching_lead_types: { description: "Buys personal loan leads (unsecured installment loans)." }
+      states_licensed: { description: "Public NMLS ID or state lending licenses for the states it lends in." }
+      minimum_debt_fits: { name: Lead requirements fit our supply, description: "Stated minimums (credit score, income, loan amount) are ones our traffic can meet; fail only when a published minimum clearly excludes it." }
+  business-funding-buyers:
+    extends: debt-tax-buyers
+    overrides:
+      buys_matching_lead_types: { description: "Buys small-business funding leads (merchant cash advance, SBA or term loans)." }
+      states_licensed: { description: "Public evidence of required commercial-financing registrations or disclosures in the states it serves." }
+      minimum_debt_fits: { name: Lead requirements fit our supply, description: "Stated minimums (time in business, monthly revenue) are ones our traffic can meet; fail only when a published minimum clearly excludes it." }
+
+messaging:
+  angles:
+    - "TrustedForm certificate on every lead; consent names the buyer"
+    - "Leads filtered to your published minimums before posting"
+    - "Start with a small capped test, prepaid or on short terms"
+    - "Posting via your ping-post/direct-post spec; we adapt to your fields"
+  avoid: ["guaranteed", "approval guaranteed", "debt-free", "erase your debt", "cheapest", "unlimited leads", "risk-free", "100% conversion"]
+  cta_options: ["Open to a 50-lead test this month?", "Worth a 15-minute call to compare posting specs?"]
+
+buyer_compliance_questions:
+  - { q: "Do you provide TrustedForm or Jornaya certificates?",           supply_field: compliance_assets.trustedform }
+  - { q: "Does the consent language name us as a seller?",                 supply_field: compliance_assets.tcpa_seller_naming }
+  - { q: "Do you scrub against DNC lists and litigator lists?",            supply_field: compliance_assets.dnc_scrub }
+  - { q: "What are your traffic sources? Any incentivized traffic?",       supply_field: traffic_sources }
+  - { q: "Which states can you cover?",                                    supply_field: states }
+
+compliance_notes:
+  - "Content must not promise approval, debt reduction amounts, tax outcomes or credit score changes."
+  - "Debt relief telemarketing falls under the FTC Telemarketing Sales Rule (no advance fees, required disclosures); do not speak for the buyer about their program."
+  - "Payment risk is higher than in other verticals: recommend prepay or short terms for new buyers (Buyer Due Diligence, D1)."
+
+evals:
+  dataset: evals/finance/v1
+  gates:
+    s1_precision_lead_buyer: 0.80
+    s1_competitor_recall: 0.85
+    q1_tier_a_precision: 0.70
+    q1_unverified_quote_rate_pre_filter_max: 0.05
+    w1_factuality: 1.0

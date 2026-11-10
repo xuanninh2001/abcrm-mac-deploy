@@ -1,0 +1,25 @@
+{
+  "name": "@abcrm/qualification",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/agents": "workspace:*",
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/llm": "workspace:*",
+    "json-logic-js": "2.0.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/json-logic-js": "2.0.8"
+  }
+}

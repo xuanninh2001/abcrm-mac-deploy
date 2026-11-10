@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/.turbo
+**/.git
+**/coverage
+**/*.log
+.env*
+**/.env*
+.deploy-checkout
+.playwright*
+output
+backups
+*.zip
+*.tar*

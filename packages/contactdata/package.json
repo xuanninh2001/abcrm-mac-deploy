@@ -1,0 +1,23 @@
+{
+  "name": "@abcrm/contactdata",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abcrm/core": "workspace:*",
+    "@abcrm/crm": "workspace:*",
+    "@abcrm/crypto": "workspace:*",
+    "@abcrm/db": "workspace:*",
+    "@abcrm/llm": "workspace:*"
+  },
+  "devDependencies": {
+    "@abcrm/setup": "workspace:*"
+  }
+}
