@@ -9,7 +9,6 @@ const url = process.env.APP_DATABASE_URL;
 if (!url) throw new Error("APP_DATABASE_URL is required");
 const production = process.env.NODE_ENV === "production";
 const workosClientId = process.env.WORKOS_CLIENT_ID;
-if (production && !workosClientId) throw new Error("WORKOS_CLIENT_ID is required in production");
 
 const app = createApp({
   pool: createPool(url),

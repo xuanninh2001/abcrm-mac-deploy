@@ -4,6 +4,7 @@ ABCRM: **Agentic CRM giúp offshore lead gen agency / B2B affiliate tìm và ký
 Lead Sourcing Agent tìm buyer data lead theo chân dung partner mục tiêu, ABCRM cung cấp contact verified; Qualification Agent chấm theo bộ tiêu chí tenant tự tuỳ chỉnh, có bằng chứng; **chỉ những lead được sales rep duyệt mới được liên hệ**; doanh thu theo buyer đồng bộ từ RedTrack.
 
 ## Tài liệu
+- [Chạy Mac/Docker với đăng nhập email/mật khẩu nội bộ](docs/runbooks/07-mac-docker.md): không cần WorkOS, tạo owner và reset mật khẩu bằng terminal.
 - [PRD: Đặc tả yêu cầu sản phẩm](docs/01-PRD.md)
 - [System Design: Thiết kế hệ thống](docs/02-system-design.md)
 - [Roadmap (solo founder)](docs/03-roadmap.md)
@@ -35,8 +36,8 @@ Monorepo TypeScript (pnpm + Turborepo), PostgreSQL là trung tâm (RLS, DBOS). X
 | `packages/evals` | Eval agent (test-plan §5): suite deterministic mỗi PR (I1, S2, W1, injection-20) với gate và baseline; Q1 trên golden set với model thật (nightly) |
 | `packages/importer` | Import CSV/XLSX: parse (encoding, delimiter, nhiều sheet), mapping theo từ đồng nghĩa, dry-run, commit idempotent, rollback |
 | `packages/agents` | `defineTool`, quyền theo role/persona, policy invariants, propose/approve/execute decision (exactly-once) |
-| `apps/app` | Hono API: auth (WorkOS access token, API key, dev token); `/v1/users`, `/accounts`, `/contacts`, `/opportunities`, `/suppression`, `/supply-profile`, `/decisions`, `/imports`, `/vertical-packs`, `/playbooks` (+ preview), `/ipps`, `/sourcing-runs`, `/scorecards`, `/contact-lookups`, `/candidates/manual`, `/cards`, `/agents`, `/usage`, `/tenant/kill-switch`, `/notifications` |
-| `apps/web` | Next.js UI + BFF: đăng nhập WorkOS (hoặc dev), cookie phiên mã hoá, Decision Inbox (table view, duyệt theo nhóm, card view có phím tắt, undo 5 giây), Setup, Sourcing, Import, Team (mời user, role), Usage, Agents, Notifications; e2e Playwright |
+| `apps/app` | Hono API: auth (internal session, optional WorkOS, API key, dev token); `/v1/users`, `/accounts`, `/contacts`, `/opportunities`, `/suppression`, `/supply-profile`, `/decisions`, `/imports`, `/vertical-packs`, `/playbooks` (+ preview), `/ipps`, `/sourcing-runs`, `/scorecards`, `/contact-lookups`, `/candidates/manual`, `/cards`, `/agents`, `/usage`, `/tenant/kill-switch`, `/notifications` |
+| `apps/web` | Next.js UI + BFF: đăng nhập email/mật khẩu nội bộ (WorkOS/dev tùy chọn), cookie phiên mã hoá, Decision Inbox (table view, duyệt theo nhóm, card view có phím tắt, undo 5 giây), Setup, Sourcing, Import, Team (tạo tài khoản, role), Usage, Agents, Notifications; e2e Playwright |
 | `apps/worker` | DBOS: outbox dispatcher (đăng ký handler theo topic), workflow chờ quyết định, workflow sourcing run, Q1 qualification, S2 tìm contact, W1 và đề xuất card, playbook preview, queue theo plan (concurrency theo tenant), vòng bảo trì (hết hạn, reservation, escalation, digest, báo usage) |
 
 ```bash

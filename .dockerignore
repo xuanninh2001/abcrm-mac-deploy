@@ -10,5 +10,6 @@
 .playwright*
 output
 backups
+.auth-test-tools
 *.zip
 *.tar*

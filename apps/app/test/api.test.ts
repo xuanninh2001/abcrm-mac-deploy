@@ -498,7 +498,7 @@ describe("team management via API", () => {
     const res = await call("POST", "/v1/users", tokenAdminA, { email: "New.Rep@Agency.vn", name: "New Rep", role: "sales_rep" });
     expect(res.status).toBe(201);
     const invited = await res.json() as { user: { id: string; email: string; status: string }; invitation: { sent: boolean; reason: string } };
-    expect(invited).toMatchObject({ user: { email: "new.rep@agency.vn", status: "invited" }, invitation: { sent: false, reason: "workos_not_configured" } });
+    expect(invited).toMatchObject({ user: { email: "new.rep@agency.vn", status: "invited" }, invitation: { sent: false, reason: "local_password_required" } });
     expect((await call("POST", "/v1/users", tokenAdminA, { email: "new.rep@agency.vn", role: "viewer" })).status).toBe(409);
     const active = await (await call("GET", "/v1/users", tokenA)).json() as { data: { id: string }[] };
     expect(active.data.map((u) => u.id)).not.toContain(invited.user.id);

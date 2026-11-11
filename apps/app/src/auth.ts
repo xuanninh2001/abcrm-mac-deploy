@@ -27,7 +27,14 @@ export function authenticate(deps: Deps, failures: RateLimiter): MiddlewareHandl
     let actor: { type: "user" | "api_key"; id: string } | undefined;
     let scopes: string[] | undefined;
 
-    if (token.startsWith("abk_")) {
+    if (/^local_[a-f0-9]{64}$/.test(token)) {
+      const { rows: [u] } = await deps.pool.query("SELECT * FROM abcrm.resolve_local_session($1)", [createHash("sha256").update(token).digest()]);
+      if (u) {
+        tenantId = u.tenant_id;
+        actor = { type: "user", id: u.user_id };
+        principal = { type: "user", id: u.user_id, role: u.role };
+      }
+    } else if (token.startsWith("abk_")) {
       const hash = createHash("sha256").update(token).digest();
       const { rows: [k] } = await deps.pool.query<{ api_key_id: string; tenant_id: string; scopes: string[] }>(
         "SELECT * FROM abcrm.resolve_api_key($1)", [hash]);

@@ -26,7 +26,7 @@ export default async function Team() {
       )}
       {canManage && (
         <section className="card" aria-label="Invite">
-          <h2 style={{ marginTop: 0 }}>Invite a teammate</h2>
+          <h2 style={{ marginTop: 0 }}>Create internal account</h2>
           <InviteForm canInviteOwner={isOwner} />
         </section>
       )}
@@ -46,7 +46,7 @@ export default async function Team() {
                 {canManage && (
                   <td>{editable && (
                     <span className="row">
-                      {m.status === "invited" && <Action path={`/users/${m.id}/resend-invite`}>Resend invite</Action>}
+                      {m.status === "invited" && <span className="small muted">Ask the server administrator to set a password.</span>}
                       {m.status === "disabled"
                         ? <Action path={`/users/${m.id}`} method="PATCH" body={{ status: "active" }}>Enable</Action>
                         : <Action className="danger" path={`/users/${m.id}`} method="DELETE"

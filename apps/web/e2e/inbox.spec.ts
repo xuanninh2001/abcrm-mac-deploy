@@ -10,7 +10,7 @@ async function signIn(page: Page, userId = state().userId) {
   await expect(page).toHaveURL(/\/login\?next=%2Finbox/);
   await page.getByLabel("Tenant ID").fill(s.tenantId);
   await page.getByLabel("User ID").fill(userId);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.locator('form[action="/dev-login"]').getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/inbox$/);
 }
 
@@ -58,12 +58,13 @@ test("an admin invites a teammate and imports accounts from a CSV", async ({ pag
 
   await page.getByRole("link", { name: "Team" }).click();
   await page.getByLabel("Email").fill("new.rep@agency.vn");
-  await page.getByRole("button", { name: "Invite" }).click();
+  await page.getByLabel("Initial password").fill("test-teammate-password");
+  await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("status").filter({ hasText: "new.rep@agency.vn added" })).toBeVisible();
   const row = page.getByRole("row", { name: /new\.rep@agency\.vn/ });
-  await expect(row).toContainText("invited");
+  await expect(row).toContainText("active");
   page.once("dialog", (d) => d.accept());
-  await row.getByRole("button", { name: "Revoke invite" }).click();
+  await row.getByRole("button", { name: "Disable" }).click();
   await expect(row).toContainText("disabled");
 
   await page.getByRole("link", { name: "Import" }).click();

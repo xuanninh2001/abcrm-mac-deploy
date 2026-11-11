@@ -3,6 +3,7 @@ import type { Actor, TenantTx } from "@abcrm/db";
 import type { Principal, Role } from "@abcrm/agents";
 import { assignCard } from "@abcrm/inbox";
 import type { WorkosDirectory } from "./workos.js";
+import { hashPassword } from "@abcrm/crypto";
 
 export type UserRow = {
   id: string; email: string; name: string | null; role: Role; status: "invited" | "active" | "disabled"; timezone: string;
@@ -35,7 +36,7 @@ const callerRole = (p: Principal): Role => {
  * sends the WorkOS invitation email. Only an owner can invite another owner.
  */
 export async function inviteUser(tx: TenantTx, actor: Actor, principal: Principal, directory: WorkosDirectory | undefined,
-  input: { email: string; name?: string; role: Role; timezone?: string }) {
+  input: { email: string; name?: string; role: Role; timezone?: string; password?: string }) {
   if (input.role === "owner" && callerRole(principal) !== "owner") throw new Problem("permission-denied", "Only an owner can invite an owner");
   const email = input.email.trim().toLowerCase();
   const { rows: [dup] } = await tx.client.query<{ status: string }>("SELECT status FROM abcrm.users WHERE email = $1", [email]);
@@ -47,7 +48,11 @@ export async function inviteUser(tx: TenantTx, actor: Actor, principal: Principa
     [id, tx.tenantId, `${INVITE_PREFIX}${id}`, email, input.name ?? null, input.role, input.timezone ?? null, principal.id]);
   await appendAudit(tx, { actor, action: "user.invited", subject: { type: "user", id } });
   await emit(tx, "iam.user.invited", { user_id: id, role: input.role });
-  const invitation = await sendInvite(tx, directory, email);
+  if (input.password) {
+    await tx.client.query("SELECT abcrm.local_initialize_user($1,$2)", [id, await hashPassword(input.password)]);
+    await recordActivation(tx, id);
+  }
+  const invitation = input.password ? { sent: false, reason: "local_account_created" } : await sendInvite(tx, directory, email);
   return { user: await load(tx, id).then(strip), invitation };
 }
 
@@ -61,7 +66,7 @@ export async function resendInvite(tx: TenantTx, directory: WorkosDirectory | un
 
 async function sendInvite(tx: TenantTx, directory: WorkosDirectory | undefined, email: string) {
   const { rows: [t] } = await tx.client.query<{ workos_org_id: string | null }>("SELECT workos_org_id FROM abcrm.tenants WHERE id = $1", [tx.tenantId]);
-  if (!directory) return { sent: false, reason: "workos_not_configured" };
+  if (!directory) return { sent: false, reason: "local_password_required" };
   if (!t?.workos_org_id) return { sent: false, reason: "tenant_has_no_workos_organization" };
   try {
     const r = await directory.invite({ email, organizationId: t.workos_org_id });

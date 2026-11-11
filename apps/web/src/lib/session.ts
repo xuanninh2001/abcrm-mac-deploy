@@ -8,6 +8,7 @@ const MAX_AGE = 60 * 60 * 24 * 14;
 
 /** WorkOS AuthKit session (access + refresh token) or a dev token (`dev:<tenant>:<user>`, dev only). */
 export type Session =
+  | { kind: "local"; token: string; email: string; expiresAt: number }
   | { kind: "workos"; accessToken: string; refreshToken: string; email: string; name: string | null }
   | { kind: "dev"; token: string; email: string };
 
@@ -28,6 +29,7 @@ export const workos = () => (config.workos ? new WorkOS(config.workos.apiKey, { 
  */
 export async function freshSession(s: Session | null): Promise<{ session: Session | null; changed: boolean }> {
   if (!s || s.kind === "dev") return { session: s, changed: false };
+  if (s.kind === "local") return { session: s.expiresAt > Date.now() ? s : null, changed: s.expiresAt <= Date.now() };
   const exp = jwtExp(s.accessToken);
   if (exp && exp * 1000 > Date.now() + 60_000) return { session: s, changed: false };
   const w = workos();
@@ -40,4 +42,4 @@ export async function freshSession(s: Session | null): Promise<{ session: Sessio
   }
 }
 
-export const bearer = (s: Session) => (s.kind === "dev" ? s.token : s.accessToken);
+export const bearer = (s: Session) => (s.kind === "workos" ? s.accessToken : s.token);

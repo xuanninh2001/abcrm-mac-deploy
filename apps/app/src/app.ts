@@ -3,6 +3,7 @@ import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import type { AppEnv, Deps } from "./env.js";
 import { authenticate } from "./auth.js";
+import { localAuthRoutes } from "./local-auth.js";
 import { actorLimit, DEFAULT_LIMITS, RateLimiter } from "./limits.js";
 import { onError } from "./errors.js";
 import { accountRoutes } from "./routes/accounts.js";
@@ -44,6 +45,7 @@ export function createApp(deps: Deps) {
   });
 
   const v1 = new Hono<AppEnv>();
+  app.route("/auth/local", localAuthRoutes(deps));
   v1.use("*", authenticate(deps, new RateLimiter(limits.authFailuresPerIpPerMin)));
   v1.use("*", actorLimit(new RateLimiter(limits.perActorPerMin)));
   v1.get("/me", async (c) => {

@@ -19,7 +19,7 @@ export function userRoutes(deps: Deps) {
   r.post("/", async (c) => {
     requirePermission(c, "users.manage");
     const b = z.object({ email: z.email().max(254), name: z.string().trim().min(1).max(120).optional(), role: ROLE,
-      timezone: z.string().max(64).optional() }).parse(await c.req.json());
+      timezone: z.string().max(64).optional(), password: z.string().min(12).max(256).refine(p => Buffer.byteLength(p) <= 256).optional() }).parse(await c.req.json());
     return c.json(await inTenant(deps, c, (tx) => inviteUser(tx, c.get("ctx").actor, c.get("principal"), deps.directory, b)), 201);
   });
   r.patch("/me", async (c) => {

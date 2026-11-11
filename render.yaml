@@ -23,10 +23,6 @@ services:
         sync: false
       - key: ABCRM_PLATFORM_CACHE_KEY
         sync: false
-      - key: WORKOS_CLIENT_ID
-        sync: false
-      - key: WORKOS_API_KEY
-        sync: false
 
   - type: web
     name: abcrm-web
@@ -43,9 +39,5 @@ services:
         sync: false
       - key: ABCRM_WEB_SESSION_SECRET  # 32 bytes base64; rotating it signs everyone out
         sync: false
-      - key: WORKOS_CLIENT_ID
-        sync: false
-      - key: WORKOS_API_KEY
-        sync: false
-      - key: WORKOS_REDIRECT_URI       # https://<web host>/auth/callback
+      - key: ABCRM_PUBLIC_URL         # https://<web host>, exact public origin
         sync: false

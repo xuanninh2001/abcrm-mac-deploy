@@ -19,6 +19,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <Link href="/usage">Usage</Link>
         {["owner", "admin"].includes(user.role) && <Link href="/imports">Import</Link>}
         <Link href="/team">Team</Link>
+        <Link href="/password">Change password</Link>
         <Link href="/notifications">Notifications {notes.unread > 0 && <span className="count" aria-label={`${notes.unread} unread`}>{notes.unread}</span>}</Link>
         <div className="me">
           <div>{user.user?.name ?? user.user?.email ?? "Signed in"}</div>

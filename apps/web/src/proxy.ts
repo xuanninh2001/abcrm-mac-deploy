@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cookieOptions, freshSession, sealSession, SESSION_COOKIE, unsealSession } from "./lib/session";
+import { authOrigin } from "./lib/auth-origin";
 
 const PUBLIC = ["/login", "/auth/", "/dev-login"];
 
@@ -14,7 +15,7 @@ export async function proxy(req: NextRequest) {
   if (!session) {
     const res = path.startsWith("/api/")
       ? NextResponse.json({ type: "https://docs.abcrm.app/errors/unauthenticated", title: "Sign in required", status: 401 }, { status: 401 })
-      : NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(path)}`, req.url));
+      : NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(path)}`, authOrigin(req)));
     if (changed) res.cookies.delete(SESSION_COOKIE);
     return res;
   }
