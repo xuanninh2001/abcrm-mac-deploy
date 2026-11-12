@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api, me } from "@/lib/api";
 import { Action } from "@/components/Action";
 import { SupplyForm, type Supply } from "@/components/SupplyForm";
@@ -19,7 +20,7 @@ export default async function Setup() {
   const packDetails = await Promise.all(packs.data.map((k) => api<{ key: string; ipp_templates: string[] }>(`/vertical-packs/${k}`)));
   return (
     <>
-      <h1>Setup</h1>
+      <PageHeading title="Setup" eyebrow="WORKSPACE CONFIGURATION" description="Define your supply, qualification playbooks and ideal partner profiles." />
       <section className="card" aria-label="Approvals">
         <h2 style={{ marginTop: 0 }}>Waiting for approval</h2>
         {decisions.data.length === 0 && <p className="muted">Nothing to approve.</p>}
@@ -62,12 +63,12 @@ export default async function Setup() {
           <h2 style={{ marginTop: 0 }}>Ideal partner profiles</h2>
           {ipps.data.length === 0 && <p className="muted">None yet. Clone a vertical pack to start.</p>}
           {ipps.data.length > 0 && (
-            <table>
+            <div className="table-scroll" role="region" aria-label="Ideal partner profiles" tabIndex={0}><table>
               <thead><tr><th>Name</th><th>Version</th><th>Status</th></tr></thead>
               <tbody>{ipps.data.map((i) => (
                 <tr key={i.id}><td><a href={`/setup/ipps/${i.id}`}>{i.name}</a></td><td>v{i.version}</td><td>{i.status.replace("_", " ")}</td></tr>
               ))}</tbody>
-            </table>
+            </table></div>
           )}
         </section>
       </div>
@@ -85,7 +86,7 @@ function PreviewNote({ preview }: { preview: Preview }) {
 function Lineages({ rows, base }: { rows: Lineage[]; base: string }) {
   if (!rows.length) return <p className="muted">None yet. Clone a vertical pack to start.</p>;
   return (
-    <table>
+    <div className="table-scroll" role="region" aria-label="Playbook versions" tabIndex={0}><table>
       <thead><tr><th>Name</th><th>Active</th><th>Draft</th></tr></thead>
       <tbody>
         {rows.map((r) => (
@@ -96,6 +97,6 @@ function Lineages({ rows, base }: { rows: Lineage[]; base: string }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }

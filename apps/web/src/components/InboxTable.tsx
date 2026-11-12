@@ -59,10 +59,10 @@ export function InboxTable({ cards: all, me }: { cards: CardRow[]; me: string })
     }
   }
 
-  if (!cards.length) return <div className="card muted">No cards waiting. New buyers appear here after qualification.</div>;
+  if (!cards.length) return <><div className="card muted empty-state"><strong>No cards waiting.</strong>New buyers appear here after qualification.</div>{message && <p role="status">{message}</p>}</>;
   return (
     <>
-      <div className="spread card">
+      <div className="spread card bulk-toolbar">
         <span>{selected.size} selected</span>
         <div className="row">
           {message && <span role="status" className="small">{message}</span>}
@@ -70,13 +70,13 @@ export function InboxTable({ cards: all, me }: { cards: CardRow[]; me: string })
         </div>
       </div>
       {groups.map(([name, rows]) => (
-        <section key={name} className="card" aria-label={name}>
+        <section key={name} className="card inbox-group" aria-label={name}>
           <div className="spread">
             <h2 style={{ margin: 0 }}>{name} <span className="muted small">· {rows.length} cards · Tier A {rows.filter((r) => r.tier === "A").length}</span></h2>
             <label className="small"><input type="checkbox" onChange={(e) => toggleGroup(rows, e.target.checked)}
               checked={rows.every((r) => selected.has(r.card_id))} /> Select group</label>
           </div>
-          <table>
+          <div className="table-scroll" role="region" aria-label="Buyer review queue" tabIndex={0}><table>
             <thead><tr><th></th><th>Company</th><th>Tier</th><th>Top reason</th><th>Contact</th><th>First line (AI)</th><th>Flags</th></tr></thead>
             <tbody>
               {rows.map((c) => (
@@ -96,7 +96,7 @@ export function InboxTable({ cards: all, me }: { cards: CardRow[]; me: string })
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </section>
       ))}
     </>

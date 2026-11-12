@@ -32,12 +32,12 @@ export default async function PlaybookPage({ params }: { params: Promise<{ id: s
               {latest.error && <span className="error"> {latest.error}</span>}
             </p>
             {latest.results.length > 0 && (
-              <table>
+              <div className="table-scroll" role="region" aria-label="Qualification preview" tabIndex={0}><table>
                 <thead><tr><th>Company</th><th>Tier</th><th>Score</th><th>Stopped at</th></tr></thead>
                 <tbody>{latest.results.map((r) => (
                   <tr key={r.account_id}><td>{r.name}<div className="muted small">{r.domain}</div></td><td><span className={`badge tier-${r.tier}`}>{r.tier}</span></td><td>{r.pct}%</td><td>{r.stopped_at ?? "—"}</td></tr>
                 ))}</tbody>
-              </table>
+              </table></div>
             )}
           </>
         )}

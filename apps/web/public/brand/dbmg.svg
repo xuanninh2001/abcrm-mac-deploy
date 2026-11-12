@@ -1,0 +1,8 @@
+<svg width="216" height="52" viewBox="24 16 216 52" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cube shape with White stroke -->
+  <path d="M30 30 L50 20 L70 30 L70 50 L50 60 L30 50 Z" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  <path d="M50 20 L50 40 L70 50 L70 30 Z" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  <path d="M50 40 L50 60 L30 50 L30 30 Z" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  <!-- DBMG text in Montserrat Bold, vertically centered -->
+  <text x="80" y="55" font-family="Montserrat, sans-serif" font-weight="700" font-size="40" fill="#FFFFFF">DBMG</text>
+</svg>

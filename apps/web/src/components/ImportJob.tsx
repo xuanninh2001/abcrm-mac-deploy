@@ -48,7 +48,7 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
       <section className="card" aria-label="Column mapping">
         <h2 style={{ marginTop: 0 }}>1. Columns</h2>
         <p className="small muted">Required: {job.targets.required.map((g) => g.map(fieldLabel).join(" + ")).join(", or ")}.</p>
-        <table>
+        <div className="table-scroll" role="region" aria-label="Import column mapping" tabIndex={0}><table>
           <thead><tr><th>Column in your file</th><th>Imports as</th></tr></thead>
           <tbody>{job.headers.map((h) => (
             <tr key={h}>
@@ -59,7 +59,7 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
               </select></td>
             </tr>
           ))}</tbody>
-        </table>
+        </table></div>
         {!complete && <p className="error small">Map the required fields before the dry-run.</p>}
         {duplicateTarget && <p className="error small">{fieldLabel(duplicateTarget)} is mapped twice.</p>}
       </section>
@@ -115,13 +115,13 @@ function RowList({ title, rows }: { title: string; rows: Row[] }) {
   return (
     <details>
       <summary>{title}: first {rows.length}</summary>
-      <table>
+      <div className="table-scroll" role="region" aria-label="Import validation results" tabIndex={0}><table>
         <thead><tr><th>Row</th><th>Problem</th><th>Data</th></tr></thead>
         <tbody>{rows.map((r) => (
           <tr key={r.row_no}><td>{r.row_no}</td><td className="small">{r.errors.join("; ")}</td>
             <td className="small muted">{Object.entries(r.raw).slice(0, 4).map(([k, v]) => `${k}: ${String(v ?? "")}`).join(" · ")}</td></tr>
         ))}</tbody>
-      </table>
+      </table></div>
     </details>
   );
 }

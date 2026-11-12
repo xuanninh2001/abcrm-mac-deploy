@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api } from "@/lib/api";
 import { Action } from "@/components/Action";
 import { NewRun } from "@/components/NewRun";
@@ -14,13 +15,13 @@ export default async function Sourcing({ searchParams }: { searchParams: Promise
   const names = new Map(ipps.data.map((i) => [i.id, i.name]));
   return (
     <>
-      <h1>Sourcing</h1>
+      <PageHeading title="Sourcing" eyebrow="BUYER DISCOVERY" description="Find prospects with your ideal partner profiles and track each run." />
       <NewRun ipps={ipps.data.filter((i) => i.status === "active")} preselect={ipp} />
       <section className="card" aria-label="Runs">
         <h2 style={{ marginTop: 0 }}>Runs</h2>
         {runs.data.length === 0 && <p className="muted">No runs yet.</p>}
         {runs.data.length > 0 && (
-          <table>
+          <div className="table-scroll" role="region" aria-label="Sourcing runs" tabIndex={0}><table>
             <thead><tr><th>IPP</th><th>Status</th><th>Found / target</th><th>Qualified</th><th>Cards</th><th>Credits (agent / contact)</th><th></th></tr></thead>
             <tbody>{runs.data.map((r) => (
               <tr key={r.id}>
@@ -37,7 +38,7 @@ export default async function Sourcing({ searchParams }: { searchParams: Promise
                 </td>
               </tr>
             ))}</tbody>
-          </table>
+          </table></div>
         )}
       </section>
     </>

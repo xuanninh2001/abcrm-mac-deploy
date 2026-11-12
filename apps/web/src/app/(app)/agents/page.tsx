@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api, me } from "@/lib/api";
 import { Action } from "@/components/Action";
 import { AgentBudget } from "@/components/AgentBudget";
@@ -16,10 +17,10 @@ export default async function Agents() {
   const isOwner = ["owner", "admin"].includes(user.role);
   return (
     <>
-      <h1>Agents</h1>
+      <PageHeading title="Agents" eyebrow="AUTOMATION" description="Monitor your agents, manage budgets and control active runs." />
       <section className="card">
         {agents.data.length === 0 && <p className="muted">Agents appear here after their first run.</p>}
-        <table>
+        <div className="table-scroll" role="region" aria-label="Agents" tabIndex={0}><table>
           <thead><tr><th>Agent</th><th>Status</th><th>Credits today / month</th><th>Budgets (daily / monthly)</th><th></th></tr></thead>
           <tbody>{agents.data.map((a) => (
             <tr key={a.id}>
@@ -32,7 +33,7 @@ export default async function Agents() {
                 : <Action className="primary" path={`/agents/${a.id}/resume`}>Resume</Action>)}</td>
             </tr>
           ))}</tbody>
-        </table>
+        </table></div>
       </section>
       {isOwner && (
         <section className="card" aria-label="Kill switch">

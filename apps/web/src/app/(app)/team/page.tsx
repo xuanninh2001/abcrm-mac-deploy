@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api, me } from "@/lib/api";
 import type { TeamMember } from "@/lib/types";
 import { Action } from "@/components/Action";
@@ -16,7 +17,7 @@ export default async function Team() {
   const isOwner = user.role === "owner";
   return (
     <>
-      <h1>Team</h1>
+      <PageHeading title="Team" eyebrow="PEOPLE & ACCESS" description="Manage your profile, teammates and workspace permissions." />
       {user.user && (
         <section className="card" aria-label="Your profile">
           <h2 style={{ marginTop: 0 }}>Your profile</h2>
@@ -31,7 +32,7 @@ export default async function Team() {
         </section>
       )}
       <section className="card" aria-label="Members">
-        <table>
+        <div className="table-scroll" role="region" aria-label="Team members" tabIndex={0}><table>
           <thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Timezone</th>{canManage && <th></th>}</tr></thead>
           <tbody>{team.data.map((m) => {
             const self = m.id === user.actor.id;
@@ -58,7 +59,7 @@ export default async function Team() {
               </tr>
             );
           })}</tbody>
-        </table>
+        </table></div>
       </section>
     </>
   );

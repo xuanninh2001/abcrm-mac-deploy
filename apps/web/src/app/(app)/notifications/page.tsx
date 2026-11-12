@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api } from "@/lib/api";
 import { Action } from "@/components/Action";
 
@@ -9,7 +10,7 @@ export default async function Notifications() {
   const { data, unread } = await api<{ data: Note[]; unread: number }>("/notifications?limit=100");
   return (
     <>
-      <h1>Notifications <span className="muted small">{unread} unread</span></h1>
+      <PageHeading title={<>Notifications <span className="muted small">{unread} unread</span></>} eyebrow="WORKSPACE ACTIVITY" description="Stay up to date with decisions, team updates and agent activity." />
       {data.length === 0 && <div className="card muted">Nothing yet.</div>}
       {data.map((n) => (
         <div key={n.id} className="card spread" style={{ opacity: n.read_at ? 0.65 : 1 }}>

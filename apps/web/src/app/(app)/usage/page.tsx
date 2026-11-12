@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import { api, me } from "@/lib/api";
 import { UsageSettings } from "@/components/UsageSettings";
 
@@ -12,7 +13,7 @@ export default async function UsagePage() {
   const canManage = ["owner", "admin"].includes(user.role);
   return (
     <>
-      <h1>Usage <span className="muted small">since {u.period}</span></h1>
+      <PageHeading title={<>Usage <span className="muted small">since {u.period}</span></>} eyebrow="CREDITS & BUDGETS" description="Track credit consumption and control your workspace spending." />
       <div className="grid2">
         {u.balances.map((b) => {
           const pct = b.included ? Math.round((100 * (b.used + b.reserved)) / b.included) : 0;
@@ -34,13 +35,13 @@ export default async function UsagePage() {
       <div className="grid2">
         <section className="card" aria-label="By action">
           <h2 style={{ marginTop: 0 }}>By action</h2>
-          <table><thead><tr><th>Meter</th><th>Action</th><th>Events</th><th>Credits</th></tr></thead>
-            <tbody>{u.by_action.map((r) => <tr key={r.meter + r.action_type}><td>{r.meter}</td><td>{r.action_type.replace(/_/g, " ")}</td><td>{r.events}</td><td>{r.credits}</td></tr>)}</tbody></table>
+          <div className="table-scroll" role="region" aria-label="Usage by action" tabIndex={0}><table><thead><tr><th>Meter</th><th>Action</th><th>Events</th><th>Credits</th></tr></thead>
+            <tbody>{u.by_action.map((r) => <tr key={r.meter + r.action_type}><td>{r.meter}</td><td>{r.action_type.replace(/_/g, " ")}</td><td>{r.events}</td><td>{r.credits}</td></tr>)}</tbody></table></div>
         </section>
         <section className="card" aria-label="By agent">
           <h2 style={{ marginTop: 0 }}>By agent</h2>
-          <table><thead><tr><th>Agent</th><th>Credits</th></tr></thead>
-            <tbody>{u.by_agent.map((r) => <tr key={r.agent_definition_id}><td>{r.name} <span className="muted small">{r.template_key}</span></td><td>{r.credits}</td></tr>)}</tbody></table>
+          <div className="table-scroll" role="region" aria-label="Usage by agent" tabIndex={0}><table><thead><tr><th>Agent</th><th>Credits</th></tr></thead>
+            <tbody>{u.by_agent.map((r) => <tr key={r.agent_definition_id}><td>{r.name} <span className="muted small">{r.template_key}</span></td><td>{r.credits}</td></tr>)}</tbody></table></div>
         </section>
       </div>
     </>

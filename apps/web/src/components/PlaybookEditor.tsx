@@ -39,7 +39,7 @@ export function PlaybookEditor({ playbook, canEdit }: { playbook: Playbook; canE
         <label>Card from tier <select aria-label="Card minimum tier" disabled={!editable} value={minTier} onChange={(e) => setMinTier(e.target.value)}>
           {["A", "B", "C"].map((t) => <option key={t}>{t}</option>)}</select></label>
       </div>
-      <table>
+      <div className="table-scroll" role="region" aria-label="Playbook criteria" tabIndex={0}><table>
         <thead><tr><th>Criterion</th><th>Kind</th><th>Evaluation</th><th>Weight</th><th>If unknown</th></tr></thead>
         <tbody>
           {criteria.map((c, i) => (
@@ -55,7 +55,7 @@ export function PlaybookEditor({ playbook, canEdit }: { playbook: Playbook; canE
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {canEdit && (
         <div className="row" style={{ marginTop: 10 }}>
           {draft && <button onClick={() => run(() => call(`/playbooks/${playbook.id}`, { method: "PUT", body: body() }), "Draft saved.")}>Save draft</button>}

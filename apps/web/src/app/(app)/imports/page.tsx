@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/PageHeading";
 import Link from "next/link";
 import { api, me } from "@/lib/api";
 import { ImportUpload } from "@/components/ImportUpload";
@@ -14,7 +15,7 @@ export default async function Imports() {
   const jobs = await api<{ data: Job[] }>("/imports?limit=50");
   return (
     <>
-      <h1>Import</h1>
+      <PageHeading title="Import" eyebrow="DATA OPERATIONS" description="Upload, map and validate your data before committing changes." />
       <section className="card" aria-label="New import">
         <h2 style={{ marginTop: 0 }}>New import</h2>
         <p className="small muted">Nothing is written until you run a dry-run and commit. A committed import can be rolled back.</p>
@@ -23,7 +24,7 @@ export default async function Imports() {
       <section className="card" aria-label="Import history">
         <h2 style={{ marginTop: 0 }}>History</h2>
         {jobs.data.length === 0 ? <p className="muted">No imports yet.</p> : (
-          <table>
+          <div className="table-scroll" role="region" aria-label="Import history" tabIndex={0}><table>
             <thead><tr><th>File</th><th>Type</th><th>Rows</th><th>Status</th><th>Result</th><th>By</th><th>When</th></tr></thead>
             <tbody>{jobs.data.map((j) => (
               <tr key={j.id}>
@@ -36,7 +37,7 @@ export default async function Imports() {
                 <td className="small">{new Date(j.created_at).toLocaleString()}</td>
               </tr>
             ))}</tbody>
-          </table>
+          </table></div>
         )}
       </section>
     </>
