@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Button } from "./Button";
 import { useRouter } from "next/navigation";
 import { errorText, upload } from "@/lib/client";
 
@@ -14,6 +15,7 @@ const PURPOSES = [
 /** Step 1: upload a CSV/XLSX; the API stages the rows and proposes a column mapping. */
 export function ImportUpload() {
   const router = useRouter();
+  const lock = useRef(false);
   const [purpose, setPurpose] = useState<string>("accounts");
   const [file, setFile] = useState<File | null>(null);
   const [sheet, setSheet] = useState("");
@@ -28,29 +30,31 @@ export function ImportUpload() {
       form.set("file", file);
       form.set("purpose", purpose);
       if (sheet.trim()) form.set("sheet", sheet.trim());
+      if (lock.current) return;
+      lock.current = true;
       setBusy(true); setErr(null);
       try {
         const r = await upload<{ jobId: string }>("/imports", form);
         router.push(`/imports/${r.jobId}`);
-      } catch (x) { setErr(errorText(x)); setBusy(false); }
+      } catch (x) { setErr(errorText(x)); setBusy(false); lock.current = false; }
     }}>
-      <fieldset style={{ border: 0, padding: 0 }}>
+      <fieldset disabled={busy} style={{ border: 0, padding: 0 }}>
         <legend className="small muted">What does the file contain?</legend>
         {PURPOSES.map(([v, l, d]) => (
           <label key={v} className="row" style={{ padding: "2px 0" }}>
-            <input type="radio" name="purpose" value={v} checked={purpose === v} onChange={() => setPurpose(v)} />
+            <input disabled={busy} type="radio" name="purpose" value={v} checked={purpose === v} onChange={() => setPurpose(v)} />
             <strong>{l}</strong> <span className="muted small">{d}</span>
           </label>
         ))}
       </fieldset>
       <p className="row" style={{ flexWrap: "wrap" }}>
         <label>File (CSV or XLSX, up to 20 MB)<br />
-          <input type="file" required accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          <input disabled={busy} type="file" required accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
-        <label>Sheet (XLSX only)<br /><input value={sheet} onChange={(e) => setSheet(e.target.value)} placeholder="first sheet" /></label>
+        <label>Sheet (XLSX only)<br /><input disabled={busy} value={sheet} onChange={(e) => setSheet(e.target.value)} placeholder="first sheet" /></label>
       </p>
       <div className="row">
-        <button className="primary" type="submit" disabled={!file || busy}>{busy ? "Reading file…" : "Upload and map columns"}</button>
+        <Button busy={busy} className="primary" type="submit" disabled={!file || busy}>{busy ? "Reading file…" : "Upload and map columns"}</Button>
         {err && <span className="error small" role="alert">{err}</span>}
       </div>
     </form>

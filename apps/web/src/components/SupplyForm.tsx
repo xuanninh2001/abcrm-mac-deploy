@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "./Button";
+import { useTask } from "@/lib/useTask";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { call, errorText } from "@/lib/client";
 
@@ -16,14 +19,16 @@ const list = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 /** Supply Profile editor: the essentials as fields, lead types as "vertical:type" lines. Saving writes the draft; Submit opens a G-T1. */
 export function SupplyForm({ initial, canEdit, locked }: { initial: Supply | null; canEdit: boolean; locked: boolean }) {
   const router = useRouter();
+  const { busy, runTask } = useTask();
   const [verticals, setVerticals] = useState<string[]>(initial?.verticals ?? ["insurance"]);
   const [leadTypes, setLeadTypes] = useState((initial?.lead_types ?? []).map((l) => `${l.vertical}:${l.type}`).join("\n"));
   const [states, setStates] = useState((initial?.states ?? ["ALL"]).join(", "));
   const [traffic, setTraffic] = useState((initial?.traffic_sources ?? []).join(", "));
   const [assets, setAssets] = useState({ trustedform: !!initial?.compliance_assets.trustedform, jornaya: !!initial?.compliance_assets.jornaya, dnc_scrub: !!initial?.compliance_assets.dnc_scrub });
   const [positioning, setPositioning] = useState(initial?.positioning ?? "");
+  const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const disabled = !canEdit || locked;
+  const disabled = busy || !canEdit || locked;
 
   const payload = () => ({
     verticals,
@@ -60,15 +65,15 @@ export function SupplyForm({ initial, canEdit, locked }: { initial: Supply | nul
       </fieldset>
       {canEdit && (
         <div className="row">
-          <button disabled={locked} onClick={async () => {
-            try { await call("/supply-profile/draft", { method: "PUT", body: payload() }); setMsg("Draft saved."); router.refresh(); } catch (e) { setMsg(errorText(e)); }
-          }}>Save draft</button>
-          <button className="primary" disabled={locked} onClick={async () => {
-            try { await call("/supply-profile/draft", { method: "PUT", body: payload() }); await call("/supply-profile/draft/submit", { body: {} }); setMsg("Submitted for approval."); router.refresh(); }
-            catch (e) { setMsg(errorText(e)); }
-          }}>Save &amp; submit for approval</button>
+          <Button busy={busy} disabled={locked} onClick={() => runTask(async () => {
+            try { await call("/supply-profile/draft", { method: "PUT", body: payload() }); setFailed(false); setMsg("Draft saved."); router.refresh(); toast.success("Changes saved."); } catch (e) { setFailed(true); setMsg(errorText(e)); toast.error(errorText(e)); }
+          })}>Save draft</Button>
+          <Button busy={busy} className="primary" disabled={locked} onClick={() => runTask(async () => {
+            try { await call("/supply-profile/draft", { method: "PUT", body: payload() }); await call("/supply-profile/draft/submit", { body: {} }); setFailed(false); setMsg("Submitted for approval."); router.refresh(); toast.success("Changes saved."); }
+            catch (e) { setFailed(true); setMsg(errorText(e)); toast.error(errorText(e)); }
+          })}>Save &amp; submit for approval</Button>
           {locked && <span className="muted small">Waiting for approval.</span>}
-          {msg && <span className="small" role="status">{msg}</span>}
+          {msg && <span className={failed ? "error small" : "small"} role={failed ? "alert" : "status"}>{msg}</span>}
         </div>
       )}
     </div>

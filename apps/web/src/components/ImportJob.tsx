@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { Button } from "./Button";
+import { useConfirm } from "./FeedbackProvider";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { call, errorText } from "@/lib/client";
 import { fieldLabel, mappingComplete } from "@/lib/text";
@@ -19,6 +22,8 @@ const EDITABLE = ["mapping", "dry_run", "ready"];
 /** Steps 2–4 of an import: confirm the column mapping, dry-run, commit (and roll back if needed). */
 export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; warnings: Row[] }) {
   const router = useRouter();
+  const ask = useConfirm();
+  const lock = useRef(false);
   const initial = useMemo(() => Object.fromEntries(job.headers.map((h) => [h, job.field_map.find((m) => m.source === h)?.target ?? ""])), [job]);
   const [map, setMap] = useState<Record<string, string>>(initial);
   const [busy, setBusy] = useState<string | null>(null);
@@ -31,9 +36,11 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
   const dry = job.stats.dry_run;
 
   const run = async (label: string, fn: () => Promise<unknown>, confirm?: string) => {
-    if (confirm && !window.confirm(confirm)) return;
+    if (lock.current) return;
+    lock.current = true;
+    if (confirm && !await ask(confirm)) { lock.current = false; return; }
     setBusy(label); setErr(null);
-    try { await fn(); router.refresh(); } catch (e) { setErr(errorText(e)); } finally { setBusy(null); }
+    try { await fn(); router.refresh(); toast.success("Import step completed."); } catch (e) { setErr(errorText(e)); } finally { setBusy(null); lock.current = false; }
   };
   const save = () => call(`/imports/${job.id}/mapping`, { method: "PUT", body: { field_map: Object.entries(map).filter(([, t]) => t).map(([source, target]) => ({ source, target })) } });
 
@@ -53,7 +60,7 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
           <tbody>{job.headers.map((h) => (
             <tr key={h}>
               <td>{h}</td>
-              <td><select aria-label={`Field for ${h}`} value={map[h] ?? ""} disabled={!editable} onChange={(e) => setMap({ ...map, [h]: e.target.value })}>
+              <td><select aria-label={`Field for ${h}`} value={map[h] ?? ""} disabled={!editable || !!busy} onChange={(e) => setMap({ ...map, [h]: e.target.value })}>
                 <option value="">— ignore —</option>
                 {job.targets.fields.map((f) => <option key={f} value={f}>{fieldLabel(f)}</option>)}
               </select></td>
@@ -68,10 +75,10 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
         <h2 style={{ marginTop: 0 }}>2. Dry-run</h2>
         <p className="small muted">Checks every row with this mapping. Nothing is written to the CRM.</p>
         {editable && (
-          <button className="primary" disabled={!complete || !!duplicateTarget || !!busy}
+          <Button busy={busy === "dry"} className="primary" disabled={!complete || !!duplicateTarget || !!busy}
             onClick={() => run("dry", async () => { if (changed || !dry) await save(); await call(`/imports/${job.id}/dry-run`, { body: {} }); })}>
             {busy === "dry" ? "Checking…" : dry && !changed ? "Run the dry-run again" : "Save mapping and run the dry-run"}
-          </button>
+          </Button>
         )}
         {dry && (
           <>
@@ -86,20 +93,20 @@ export function ImportJob({ job, errors, warnings }: { job: Job; errors: Row[]; 
       <section className="card" aria-label="Commit">
         <h2 style={{ marginTop: 0 }}>3. Commit</h2>
         {job.status === "ready" && !changed && (
-          <button className="primary" disabled={!!busy || !dry || dry.valid + dry.warning === 0}
+          <Button busy={busy === "commit"} className="primary" disabled={!!busy || !dry || dry.valid + dry.warning === 0}
             onClick={() => run("commit", () => call(`/imports/${job.id}/commit`, { body: {} }), `Import ${(dry?.valid ?? 0) + (dry?.warning ?? 0)} rows into the CRM?`)}>
             {busy === "commit" ? "Importing…" : `Import ${(dry?.valid ?? 0) + (dry?.warning ?? 0)} rows`}
-          </button>
+          </Button>
         )}
         {job.status !== "ready" && job.status !== "committed" && job.status !== "rolled_back" && <p className="muted small">Run a dry-run first.</p>}
         {job.stats.commit && (
           <p role="status">{job.stats.commit.created} created, {job.stats.commit.matched} matched existing records{job.stats.commit.suppressed ? `, ${job.stats.commit.suppressed} contacts suppressed` : ""}.</p>
         )}
         {job.status === "committed" && (
-          <button className="danger" disabled={!!busy}
+          <Button busy={busy === "rollback"} className="danger" disabled={!!busy}
             onClick={() => run("rollback", () => call(`/imports/${job.id}/rollback`, { body: {} }), "Roll back this import? Records it created are removed unless someone changed them since; records it matched are left as they were.")}>
             {busy === "rollback" ? "Rolling back…" : "Roll back"}
-          </button>
+          </Button>
         )}
         {job.status === "rolled_back" && (
           <p role="status">Rolled back: {job.stats.rollback?.deleted ?? 0} records removed{job.stats.rollback?.kept_modified ? `, ${job.stats.rollback.kept_modified} kept because they changed after the import` : ""}.</p>

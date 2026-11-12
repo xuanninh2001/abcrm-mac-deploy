@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Button } from "./Button";
 import { useRouter } from "next/navigation";
 import { call, errorText } from "@/lib/client";
 
@@ -14,6 +15,7 @@ type Result = { user: { email: string }; invitation: { sent: boolean; reason?: s
 
 export function InviteForm({ canInviteOwner }: { canInviteOwner: boolean }) {
   const router = useRouter();
+  const lock = useRef(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -23,24 +25,26 @@ export function InviteForm({ canInviteOwner }: { canInviteOwner: boolean }) {
   return (
     <form className="row" style={{ flexWrap: "wrap" }} onSubmit={async (e) => {
       e.preventDefault();
+      if (lock.current) return;
+      lock.current = true;
       setBusy(true); setMsg(null);
       try {
         const r = await call<Result>("/users", { body: { email, role, password, ...(name.trim() ? { name: name.trim() } : {}) } });
         setMsg({ ok: true, text: r.invitation.sent ? `Invitation sent to ${r.user.email}.` : `${r.user.email} added. ${REASONS[r.invitation.reason ?? ""] ?? ""}` });
         setEmail(""); setName(""); setPassword("");
         router.refresh();
-      } catch (err) { setMsg({ ok: false, text: errorText(err) }); } finally { setBusy(false); }
+      } catch (err) { setMsg({ ok: false, text: errorText(err) }); } finally { setBusy(false); lock.current = false; }
     }}>
-      <label>Email <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label>Name <input value={name} onChange={(e) => setName(e.target.value)} placeholder="optional" /></label>
-      <label>Initial password <input type="password" required minLength={12} maxLength={256} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
-      <label>Role <select value={role} onChange={(e) => setRole(e.target.value)}>
+      <label>Email <input disabled={busy} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+      <label>Name <input disabled={busy} value={name} onChange={(e) => setName(e.target.value)} placeholder="optional" /></label>
+      <label>Initial password <input disabled={busy} type="password" required minLength={12} maxLength={256} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+      <label>Role <select disabled={busy} value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="sales_rep">Sales rep</option><option value="head_of_bd">Head of BD</option>
         <option value="viewer">Viewer</option><option value="admin">Admin</option>
         {canInviteOwner && <option value="owner">Owner</option>}
       </select></label>
-      <button className="primary" disabled={busy} type="submit">Create account</button>
-      {msg && <span role="status" className={msg.ok ? "small" : "error small"}>{msg.text}</span>}
+      <Button busy={busy} className="primary" disabled={busy} type="submit">Create account</Button>
+      {msg && <span role={msg.ok ? "status" : "alert"} className={msg.ok ? "small" : "error small"}>{msg.text}</span>}
     </form>
   );
 }

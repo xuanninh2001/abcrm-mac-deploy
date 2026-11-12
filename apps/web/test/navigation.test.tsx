@@ -16,7 +16,7 @@ describe("Aurora navigation preserves access and account controls", () => {
     expect(html).toContain('action="/auth/signout"');
     expect(html).toContain('method="post"');
     expect(html).toContain('aria-label="3 unread"');
-    expect(html).toContain('aria-controls="app-navigation"');
+    expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('id="workspace"');
     expect(html).toContain("Working content");
   });

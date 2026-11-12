@@ -63,8 +63,8 @@ test("an admin invites a teammate and imports accounts from a CSV", async ({ pag
   await expect(page.getByRole("status").filter({ hasText: "new.rep@agency.vn added" })).toBeVisible();
   const row = page.getByRole("row", { name: /new\.rep@agency\.vn/ });
   await expect(row).toContainText("active");
-  page.once("dialog", (d) => d.accept());
   await row.getByRole("button", { name: "Disable" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(row).toContainText("disabled");
 
   await page.getByRole("link", { name: "Import" }).click();
@@ -75,10 +75,10 @@ test("an admin invites a teammate and imports accounts from a CSV", async ({ pag
   await expect(page.getByLabel("Field for Website")).toHaveValue("company_domain");
   await page.getByRole("button", { name: /run the dry-run/ }).click();
   await expect(page.getByText("2 ready")).toBeVisible();
-  page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Import 2 rows" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.getByText("2 created, 0 matched existing records")).toBeVisible();
-  page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Roll back" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.getByText(/Rolled back: 2 records removed/)).toBeVisible();
 });

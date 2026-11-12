@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "./Button";
+import { useTask } from "@/lib/useTask";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { call, errorText } from "@/lib/client";
 
@@ -14,10 +17,12 @@ const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 /** IPP editor: who to look for and whom to contact. Submitting needs an active playbook (G-T1). */
 export function IppForm({ ipp, canEdit }: { ipp: Ipp; canEdit: boolean }) {
   const router = useRouter();
+  const { busy, runTask } = useTask();
   const [name, setName] = useState(ipp.name);
   const [titles, setTitles] = useState(ipp.contact_titles.join("\n"));
   const [perAccount, setPerAccount] = useState(ipp.contacts_per_account);
   const [excluded, setExcluded] = useState(ipp.exclusions.domains.join("\n"));
+  const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const draft = ipp.status === "draft";
   const body = () => ({
@@ -25,10 +30,10 @@ export function IppForm({ ipp, canEdit }: { ipp: Ipp; canEdit: boolean }) {
     payout_models: ipp.payout_models, size: ipp.size, signals: ipp.signals,
     exclusions: { ...ipp.exclusions, domains: lines(excluded) }, contact_titles: lines(titles), contacts_per_account: perAccount, playbook_id: ipp.playbook_id,
   });
-  const run = async (fn: () => Promise<unknown>, ok: string) => { try { await fn(); setMsg(ok); router.refresh(); } catch (e) { setMsg(errorText(e)); } };
+  const run = (fn: () => Promise<unknown>, ok: string) => runTask(async () => { try { await fn(); setFailed(false); setMsg(ok); toast.success(ok); router.refresh(); } catch (e) { setFailed(true); setMsg(errorText(e)); toast.error(errorText(e)); } });
   return (
     <section className="card">
-      <fieldset disabled={!canEdit || !draft} style={{ border: 0, padding: 0 }}>
+      <fieldset disabled={busy || !canEdit || !draft} style={{ border: 0, padding: 0 }}>
         <p><label>Name <input aria-label="IPP name" value={name} onChange={(e) => setName(e.target.value)} style={{ minWidth: 320 }} /></label></p>
         <p className="muted small">Vertical {ipp.vertical} · lead types {ipp.lead_types.join(", ")} · buyers {ipp.buyer_types.join(", ")}</p>
         <div className="grid2">
@@ -39,16 +44,16 @@ export function IppForm({ ipp, canEdit }: { ipp: Ipp; canEdit: boolean }) {
       </fieldset>
       {canEdit && (
         <div className="row">
-          {draft && <button onClick={() => run(() => call(`/ipps/${ipp.id}`, { method: "PUT", body: body() }), "Draft saved.")}>Save draft</button>}
-          {draft && <button className="primary" onClick={() => run(async () => {
+          {draft && <Button busy={busy} onClick={() => run(() => call(`/ipps/${ipp.id}`, { method: "PUT", body: body() }), "Draft saved.")}>Save draft</Button>}
+          {draft && <Button busy={busy} className="primary" onClick={() => run(async () => {
             await call(`/ipps/${ipp.id}`, { method: "PUT", body: body() });
             await call(`/ipps/${ipp.id}/submit`, { body: {} });
-          }, "Submitted for approval.")}>Save &amp; submit</button>}
-          {ipp.status === "active" && <button onClick={async () => {
-            try { const r = await call<{ id: string }>(`/ipps/${ipp.id}/versions`, { body: body() }); router.push(`/setup/ipps/${r.id}`); } catch (e) { setMsg(errorText(e)); }
-          }}>Create new version</button>}
+          }, "Submitted for approval.")}>Save &amp; submit</Button>}
+          {ipp.status === "active" && <Button busy={busy} onClick={() => runTask(async () => {
+            try { const r = await call<{ id: string }>(`/ipps/${ipp.id}/versions`, { body: body() }); router.push(`/setup/ipps/${r.id}`); } catch (e) { setFailed(true); setMsg(errorText(e)); }
+          })}>Create new version</Button>}
           {ipp.status === "active" && <a className="btn" href={`/sourcing?ipp=${ipp.id}`}>Start a sourcing run</a>}
-          {msg && <span className="small" role="status">{msg}</span>}
+          {msg && <span className={failed ? "error small" : "small"} role={failed ? "alert" : "status"}>{msg}</span>}
         </div>
       )}
     </section>

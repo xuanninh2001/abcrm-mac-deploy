@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "./Button";
+import { useTask } from "@/lib/useTask";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { call, errorText } from "@/lib/client";
 
@@ -15,18 +18,20 @@ export type Playbook = { id: string; lineage_id: string; name: string; version: 
  */
 export function PlaybookEditor({ playbook, canEdit }: { playbook: Playbook; canEdit: boolean }) {
   const router = useRouter();
+  const { busy, runTask } = useTask();
   const [criteria, setCriteria] = useState(playbook.criteria);
   const [thresholds, setThresholds] = useState(playbook.tier_thresholds);
   const [minTier, setMinTier] = useState(playbook.card_min_tier);
+  const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const draft = playbook.status === "draft";
-  const editable = canEdit && draft;
+  const editable = canEdit && draft && !busy;
   const set = (i: number, patch: Partial<Criterion>) => setCriteria((cs) => cs.map((c, j) => (j === i ? { ...c, ...patch } : c)));
   const body = () => ({
     name: playbook.name, vertical_pack: playbook.vertical_pack ?? undefined, tier_thresholds: thresholds, card_min_tier: minTier,
     criteria: criteria.map((c) => ({ ...c, weight: c.kind === "scored" ? c.weight : 0, rule: c.rule ?? undefined })),
   });
-  const run = async (fn: () => Promise<unknown>, ok: string) => { try { await fn(); setMsg(ok); router.refresh(); } catch (e) { setMsg(errorText(e)); } };
+  const run = (fn: () => Promise<unknown>, ok: string) => runTask(async () => { try { await fn(); setFailed(false); setMsg(ok); toast.success(ok); router.refresh(); } catch (e) { setFailed(true); setMsg(errorText(e)); toast.error(errorText(e)); } });
 
   return (
     <section className="card" aria-label="Criteria">
@@ -58,18 +63,18 @@ export function PlaybookEditor({ playbook, canEdit }: { playbook: Playbook; canE
       </table></div>
       {canEdit && (
         <div className="row" style={{ marginTop: 10 }}>
-          {draft && <button onClick={() => run(() => call(`/playbooks/${playbook.id}`, { method: "PUT", body: body() }), "Draft saved.")}>Save draft</button>}
-          {draft && <button className="primary" onClick={() => run(async () => {
+          {draft && <Button busy={busy} onClick={() => run(() => call(`/playbooks/${playbook.id}`, { method: "PUT", body: body() }), "Draft saved.")}>Save draft</Button>}
+          {draft && <Button busy={busy} className="primary" onClick={() => run(async () => {
             await call(`/playbooks/${playbook.id}`, { method: "PUT", body: body() });
             await call(`/playbooks/${playbook.id}/submit`, { body: {} });
-          }, "Submitted for approval (the latest preview is attached).")}>Save &amp; submit</button>}
-          {playbook.status === "active" && <button onClick={async () => {
+          }, "Submitted for approval (the latest preview is attached).")}>Save &amp; submit</Button>}
+          {playbook.status === "active" && <Button busy={busy} onClick={() => runTask(async () => {
             try {
               const r = await call<{ id: string }>(`/playbooks/${playbook.id}/versions`, { body: body() });
               router.push(`/setup/playbooks/${r.id}`);
-            } catch (e) { setMsg(errorText(e)); }
-          }}>Create new version</button>}
-          {msg && <span className="small" role="status">{msg}</span>}
+            } catch (e) { setFailed(true); setMsg(errorText(e)); }
+          })}>Create new version</Button>}
+          {msg && <span className={failed ? "error small" : "small"} role={failed ? "alert" : "status"}>{msg}</span>}
         </div>
       )}
     </section>
