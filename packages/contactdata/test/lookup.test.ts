@@ -120,6 +120,7 @@ describe("findContacts", () => {
     const r = await findContacts(deps, t.tenantA, actor, { accountId, titles, limit: 3, creditBudget: 1 });
     expect(r.contacts).toHaveLength(1);
     expect(r.contactCredits).toBe(1);
+    expect((await inA(tx => tx.client.query("SELECT count(*)::int AS n FROM abcrm.contacts WHERE account_id=$1", [accountId]))).rows[0].n).toBe(1);
     await expect(findContacts(deps, t.tenantB, actor, { accountId, titles, limit: 1 })).rejects.toMatchObject({ status: 404 });
   });
 
@@ -127,5 +128,17 @@ describe("findContacts", () => {
     const accountId = await inA((tx) => account(tx, "buyer.com"));
     const r = await findContacts({ ...deps, providers: [] }, t.tenantA, actor, { accountId, titles, limit: 1 });
     expect(r).toMatchObject({ contacts: [], reason: "no_providers" });
+  });
+  it("uses tenant-owned adapters without a global registry or cache and respects opt-in", async () => {
+    const own = new StaticContactProvider("hunter", { "tenant-source.com": [P("Ann", "Affiliate Manager", "tenant-source.com")] });
+    const accountId = await inA(tx => account(tx, "tenant-source.com"));
+    const local = { ...deps, providers: [own], tenantProviders: [{ key: "hunter", priority: 1, allowed: true }] };
+    const result = await findContacts(local, t.tenantA, actor, { accountId, titles, limit: 1 });
+    expect(result.contacts).toHaveLength(1);
+    expect(result.contacts[0]!.source).toBe("hunter");
+    expect((await t.admin.query("SELECT count(*)::int AS n FROM abcrm.licensed_contact_cache")).rows[0].n).toBe(0);
+    own.calls = 0;
+    const blocked = await findContacts({ ...local, tenantProviders: [{ key: "hunter", priority: 1, allowed: false }] }, t.tenantA, actor, { accountId, titles, limit: 1 });
+    expect(blocked.reason).toBe("no_providers"); expect(own.calls).toBe(0);
   });
 });

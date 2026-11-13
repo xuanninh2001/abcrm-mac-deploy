@@ -3,6 +3,7 @@ export { extractHtml, type ExtractedPage } from "./extract.js";
 export { detectTech, TECH_SIGNATURES, type TechSignals } from "./tech.js";
 export { isBlockedAddress } from "./ssrf.js";
 export { normalizeUrl, registrableDomain, matchesDomainPattern } from "./url.js";
+export { TavilySearch, SearchWaterfall } from "./tavily.js";
 export { BraveSearch, CachedSearch, StaticSearch, type SearchProvider, type SearchQuery, type SearchResult } from "./search.js";
 export { planQueries } from "./plan.js";
 export { examineDomain, sentencesWith, BUYER_TECH, PAGE_TEXT_LIMIT, type Findings } from "./examine.js";

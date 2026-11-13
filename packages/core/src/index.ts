@@ -1,4 +1,6 @@
 export { uuidv7, uuidFromName } from "./ids.js";
+export { SOURCE_CATALOG, readSourceSettings, saveSourceSettings, sourceCredential, resolveSourceSettings, type SourceInput, type SourceProvider } from "./source-settings.js";
+export { providerJson } from "./provider-http.js";
 export { canonicalJson } from "./canonical-json.js";
 export { Problem, notFound, type ProblemType } from "./problem.js";
 export { emit, notify, notifyRoles, type EventOptions, type NotificationInput } from "./outbox.js";

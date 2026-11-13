@@ -15,6 +15,7 @@ export type QualificationWorkerDeps = {
   resolveLlm?: (tenantId: string) => Promise<LlmGateway | null>;
   pages?: PageSource;
   contacts: ContactDataDeps;
+  resolveContacts?: (tenantId: string) => Promise<ContactDataDeps>;
 };
 
 const messagingFor = async (vertical: string) => ((await loadPack(vertical).catch(() => null))?.messaging as Messaging | undefined) ?? null;
@@ -28,6 +29,7 @@ const step = <T>(name: string, fn: () => Promise<T>) => DBOS.runStep(fn, { name 
  * candidate is qualified once and a scorecard triggers one lookup however often events are redelivered.
  */
 export function registerQualification(deps: QualificationWorkerDeps) {
+  const resolveContacts = (tenantId: string) => deps.resolveContacts ? deps.resolveContacts(tenantId) : Promise.resolve(deps.contacts);
   const resolveLlm = (tenantId: string) => deps.resolveLlm ? deps.resolveLlm(tenantId) : Promise.resolve(deps.llm);
   async function qualify(tenantId: string, candidateId: string, eventId: string) {
     return qualifyCandidate({ pool: deps.pool, llm: await resolveLlm(tenantId), pages: deps.pages, step }, tenantId, candidateId, { eventId });
@@ -39,7 +41,7 @@ export function registerQualification(deps: QualificationWorkerDeps) {
     if (!plan) return { status: "skipped" };
     if (plan.lookup) {
       const pack = await loadPack(plan.vertical).catch(() => null);
-      const result = await step("s2:find", () => findContacts(deps.contacts, tenantId, s2, {
+      const result = await step("s2:find", async () => findContacts(await resolveContacts(tenantId), tenantId, s2, {
         lookupId: uuidFromName(`s2:${tenantId}:${scorecardId}`), accountId, candidateId, titles: plan.titles, synonyms: pack?.contact_titles.synonyms,
         limit: plan.limit, creditBudget: plan.budget, sourcingRunId: plan.runId,
       }));
@@ -55,7 +57,7 @@ export function registerQualification(deps: QualificationWorkerDeps) {
   const contactsWf = DBOS.registerWorkflow(findForScorecard, { name: "findContactsForScorecard" });
 
   async function manualLookup(tenantId: string, lookupId: string, accountId: string, titles: string[], limit: number) {
-    return step("lookup", () => findContacts(deps.contacts, tenantId, s2, { lookupId, accountId, titles, limit }));
+    return step("lookup", async () => findContacts(await resolveContacts(tenantId), tenantId, s2, { lookupId, accountId, titles, limit }));
   }
   const manualWf = DBOS.registerWorkflow(manualLookup, { name: "manualContactLookup" });
 

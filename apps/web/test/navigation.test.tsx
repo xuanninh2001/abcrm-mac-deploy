@@ -14,6 +14,7 @@ describe("Aurora navigation preserves access and account controls", () => {
     for (const path of ["inbox", "sourcing", "setup", "agents", "usage", "team", "password", "notifications"]) expect(html).toContain(`href="/${path}"`);
     expect(html.includes('href="/imports"')).toBe(["owner", "admin"].includes(role));
     expect(html.includes('href="/llm"')).toBe(role === "owner");
+    expect(html.includes('href="/sources"')).toBe(role === "owner");
     expect(html).toContain('action="/auth/signout"');
     expect(html).toContain('method="post"');
     expect(html).toContain('aria-label="3 unread"');

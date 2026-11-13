@@ -5,7 +5,7 @@ import type { LlmGateway } from "@abcrm/llm";
 import { onEvent } from "../dispatcher.js";
 import { agentQueue } from "../queues.js";
 
-export type SourcingWorkerDeps = Omit<EngineDeps, "step" | "search"> & { search: SearchProvider | null; resolveLlm?: (tenantId: string) => Promise<LlmGateway | null> };
+export type SourcingWorkerDeps = Omit<EngineDeps, "step" | "search"> & { search: SearchProvider | null; resolveSearch?: (tenantId: string) => Promise<SearchProvider | null>; resolveLlm?: (tenantId: string) => Promise<LlmGateway | null> };
 
 /**
  * Registers the sourcing workflow and its trigger (`sourcing.run.queued`). Each engine step is a DBOS step,
@@ -13,14 +13,15 @@ export type SourcingWorkerDeps = Omit<EngineDeps, "step" | "search"> & { search:
  */
 export function registerSourcing(deps: SourcingWorkerDeps) {
   async function sourcingRun(tenantId: string, runId: string) {
-    if (!deps.search) {
+    const search = deps.resolveSearch ? await deps.resolveSearch(tenantId) : deps.search;
+    if (!search) {
       await DBOS.runStep(() => withTenant(deps.pool, tenantId, { type: "system", id: "sourcing" }, (tx) => tx.client.query(
         `UPDATE abcrm.sourcing_runs SET status = 'failed', finished_at = now(), stats = stats || '{"error":"search provider not configured"}'
          WHERE id = $1 AND status IN ('queued', 'running')`, [runId])), { name: "noProvider" });
       return { status: "failed" };
     }
     const llm = deps.resolveLlm ? await deps.resolveLlm(tenantId) : deps.llm;
-    return runSourcing({ ...deps, llm, search: deps.search, step: (name, fn) => DBOS.runStep(fn, { name }) }, tenantId, runId);
+    return runSourcing({ ...deps, llm, search, step: (name, fn) => DBOS.runStep(fn, { name }) }, tenantId, runId);
   }
   const wf = DBOS.registerWorkflow(sourcingRun, { name: "sourcingRun" });
 

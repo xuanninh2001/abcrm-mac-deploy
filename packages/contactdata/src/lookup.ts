@@ -17,6 +17,8 @@ export type ContactDataDeps = {
   keyring: TenantKeyring;
   platform: PlatformKeys;
   providers: ContactProvider[];
+  /** Workspace-owned credentials; use only for this lookup, never the shared licensed cache. */
+  tenantProviders?: { key: string; allowed: boolean; priority: number }[];
   verifier?: EmailVerifier;
 };
 
@@ -84,8 +86,9 @@ export async function findContacts(deps: ContactDataDeps, tenantId: string, acto
   try {
     const domainSuppressed = await global.query("SELECT 1 FROM abcrm.global_data_suppression WHERE kind = 'domain' AND value_ghmac = $1",
       [deps.platform.ghmac("domain", domain)]);
-    const rows = domainSuppressed.rowCount ? [] : (await global.query<ProviderRow>(
-      "SELECT id, key, priority, license FROM abcrm.data_providers WHERE kind = 'contact_finder' AND status = 'active' ORDER BY priority")).rows;
+    const rows: ProviderRow[] = domainSuppressed.rowCount ? [] : deps.tenantProviders
+      ? deps.tenantProviders.map(p => ({ id: "", key: p.key, priority: p.priority, license: { resale_ok: p.allowed, cache_scope: "none" as const } })).sort((a,b) => a.priority - b.priority)
+      : (await global.query<ProviderRow>("SELECT id, key, priority, license FROM abcrm.data_providers WHERE kind = 'contact_finder' AND status = 'active' ORDER BY priority")).rows;
     if (domainSuppressed.rowCount) reason = "domain_suppressed";
     else if (!start.credits) { reason = "quota_exhausted"; rows.length = 0; }
     const adapters = new Map(deps.providers.map((p) => [p.key, p]));
@@ -173,6 +176,7 @@ export async function findContacts(deps: ContactDataDeps, tenantId: string, acto
       if (contacts.length >= limit) break;
       if (await isSuppressed(tx, deps.keyring, p.person.email)) continue;
       const price = CONTACT_CREDITS[p.emailStatus];
+      if (input.creditBudget !== undefined && credits + price > input.creditBudget) break;
       const { contact, created } = await createContact(tx, deps.keyring, actor, input.accountId, {
         firstName: p.person.firstName, lastName: p.person.lastName, title: p.person.title, email: p.person.email, linkedinUrl: p.person.linkedinUrl ?? null,
         source: { kind: "provider", provider: p.provider, license_ref: p.person.ref ?? null, contact_lookup_id: lookupId },
@@ -180,7 +184,6 @@ export async function findContacts(deps: ContactDataDeps, tenantId: string, acto
       if (contact.status !== "active" || contact.account_id !== input.accountId) continue;
       let charged = 0;
       if (created) {
-        if (input.creditBudget !== undefined && credits + price > input.creditBudget) break;
         await tx.client.query(
           "UPDATE abcrm.contacts SET title_normalized = $2, seniority = $3, email_verification = $4 WHERE id = $1",
           [contact.id, normalizeTitle(p.person.title).replace(/ /g, "_"), p.seniority,

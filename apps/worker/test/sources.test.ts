@@ -1,0 +1,38 @@
+import { beforeAll, afterAll, afterEach, expect, it, vi } from "vitest";
+import { setupTestDb, type TestDb } from "@abcrm/db/testing";
+import { withTenant } from "@abcrm/db";
+import { TenantKeyring, saveSourceSettings, type SourceProvider } from "@abcrm/core";
+import { generateKey, LocalKeyProvider } from "@abcrm/crypto";
+import { PlatformKeys } from "@abcrm/contactdata";
+import { workspaceSources } from "../src/sources.js";
+let db: TestDb;
+const keyring=new TenantKeyring(new LocalKeyProvider(generateKey()));
+beforeAll(async()=>{db=await setupTestDb();});
+afterAll(async()=>{await db?.close();});
+afterEach(()=>vi.unstubAllGlobals());
+const save=(provider: SourceProvider, enabled: boolean, priority=10)=>withTenant(db.app,db.tenantA,{type:"system",id:"test"},tx=>saveSourceSettings(tx,keyring,provider,{enabled,priority,apiKey:`${provider}-test-key`,clearKey:false,usageAllowed:true}));
+it("loads current tenant search settings, falls back in order and honors disabling",async()=>{
+  const sources=workspaceSources(db.app,keyring);
+  const environment={name:"env",search:vi.fn().mockResolvedValue([])};
+  expect(await sources.search(db.tenantA,environment)).toBe(environment);
+  await save("brave",true,1); await save("tavily",true,2);
+  const fetch=vi.fn().mockResolvedValueOnce(new Response("denied",{status:429})).mockResolvedValueOnce(new Response(JSON.stringify({results:[]})));
+  vi.stubGlobal("fetch",fetch);
+  await (await sources.search(db.tenantA,environment))!.search({query:"buyers"});
+  expect(fetch.mock.calls[0]![0]).toContain("brave.com"); expect(fetch.mock.calls[1]![0]).toContain("tavily.com");
+  expect(fetch.mock.calls[1]![1].headers.authorization).toBe("Bearer tavily-test-key");
+  await save("brave",false); await save("tavily",false);
+  expect(await sources.search(db.tenantA,environment)).toBeNull();
+  expect(await sources.search(db.tenantB,environment)).toBe(environment);
+});
+it("resolves contact adapters per workspace and removes them after disable",async()=>{
+  const sources=workspaceSources(db.app,keyring);
+  const base={pool:db.app,global:db.global,keyring,platform:new PlatformKeys(generateKey(),generateKey()),providers:[]};
+  await save("hunter",true);
+  const contacts=await sources.contacts(db.tenantA,base);
+  expect(contacts.providers.map(p=>p.key)).toEqual(["hunter"]);
+  expect(contacts.tenantProviders).toEqual([{key:"hunter",priority:10,allowed:true}]);
+  expect((await sources.contacts(db.tenantB,base)).providers).toEqual([]);
+  await save("hunter",false);
+  expect((await sources.contacts(db.tenantA,base)).providers).toEqual([]);
+});

@@ -40,3 +40,12 @@ summary { padding-block: 10px; }
 .llm-fields .row { align-items: end; }
 .llm-fields label.row { align-items: center; }
 .llm-feedback { margin-top: 18px; color: var(--good); padding: 12px; background: #eef8f0; border-radius: 8px; }
+
+.sources-settings { max-width: 1120px; }
+.source-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.source-editor { margin: 0; min-width: 0; }
+.source-editor h3 { margin: 0; }
+.source-editor > .spread { margin-bottom: 20px; gap: 12px; }
+.sources-settings > section { margin-top: 32px; }
+.source-editor label.row { align-items: start; flex-wrap: nowrap; }
+@media(max-width: 1100px) { .source-grid { grid-template-columns: 1fr; } }

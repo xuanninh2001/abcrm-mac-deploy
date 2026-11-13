@@ -1,3 +1,4 @@
+import { providerJson } from "@abcrm/core";
 import { createHash } from "node:crypto";
 import type { Pool } from "@abcrm/db";
 
@@ -20,11 +21,10 @@ export class BraveSearch implements SearchProvider {
   async search(q: SearchQuery): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: q.query, count: String(Math.min(q.limit ?? 10, 20)) });
     if (q.recencyDays) params.set("freshness", q.recencyDays <= 1 ? "pd" : q.recencyDays <= 7 ? "pw" : q.recencyDays <= 31 ? "pm" : "py");
-    const res = await fetch(`${this.endpoint}?${params}`, {
-      headers: { accept: "application/json", "x-subscription-token": this.apiKey }, signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`brave search HTTP ${res.status}`);
-    const body = (await res.json()) as { web?: { results?: { url: string; title: string; description?: string; page_age?: string }[] } };
+    const body = await providerJson(`${this.endpoint}?${params}`, {
+      headers: { accept: "application/json", "x-subscription-token": this.apiKey },
+    }, "Brave") as { web?: { results?: { url: string; title: string; description?: string; page_age?: string }[] } };
+    if (!body || typeof body !== "object" || (body.web?.results !== undefined && !Array.isArray(body.web.results))) throw new Error("Brave returned an invalid result list.");
     return (body.web?.results ?? []).map((r) => ({ url: r.url, title: r.title, snippet: r.description ?? "", publishedAt: r.page_age }));
   }
 }

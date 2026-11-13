@@ -21,6 +21,7 @@ import { agentRoutes } from "./routes/agents.js";
 import { notificationRoutes } from "./routes/notifications.js";
 import { userRoutes } from "./routes/users.js";
 import { llmRoutes } from "./routes/llm.js";
+import { sourceRoutes } from "./routes/sources.js";
 import { Problem } from "@abcrm/core";
 import { withTenant } from "@abcrm/db";
 
@@ -59,6 +60,7 @@ export function createApp(deps: Deps) {
   });
   v1.route("/users", userRoutes(deps));
   v1.route("/llm-settings", llmRoutes(deps));
+  v1.route("/sources", sourceRoutes(deps));
   v1.route("/accounts", accountRoutes(deps));
   v1.route("/contacts", contactRoutes(deps));
   v1.route("/opportunities", opportunityRoutes(deps));

@@ -4,6 +4,7 @@ import { createPool, withTenant } from "@abcrm/db";
 import { BraveSearch, CachedSearch, Fetcher, fetcherPageSource } from "@abcrm/sourcing";
 import { PlatformKeys } from "@abcrm/contactdata";
 import { llmFromEnv, tenantLlm } from "@abcrm/llm";
+import { workspaceSources } from "./sources.js";
 import { launchEngine, shutdownEngine } from "./engine.js";
 import { startDispatcher } from "./dispatcher.js";
 import { registerDecisionWait } from "./workflows/decision-wait.js";
@@ -29,23 +30,26 @@ const fetcher = new Fetcher(globalPool, {
   minIntervalMs: Number(process.env.ABCRM_FETCH_INTERVAL_MS ?? 2000),
 });
 const braveKey = process.env.BRAVE_SEARCH_API_KEY;
-if (!braveKey) console.warn("BRAVE_SEARCH_API_KEY not set: sourcing runs will fail with 'search provider not configured'");
+if (!braveKey) console.warn("Environment Brave key absent; workspace Sources settings will be checked.");
 
 const llm = llmFromEnv();
 if (!llm) console.warn("Environment Claude credentials absent; workspace LLM settings will be checked for each workflow.");
 const keyring = new TenantKeyring(keyProviderFromEnv());
+const sources = workspaceSources(pool, keyring);
+const environmentSearch = braveKey ? new CachedSearch(new BraveSearch(braveKey), globalPool) : null;
+const contactDeps = { pool, global: globalPool, keyring, platform: PlatformKeys.fromEnv(), providers: [] };
 const resolveLlm = (tenantId: string) => withTenant(pool, tenantId, { type: "system", id: "llm-settings" }, tx => tenantLlm(tx, keyring));
 
 // Workflows and event handlers must be registered before launch so DBOS can recover them.
 registerDecisionWait(pool);
 registerSourcing({
   pool, fetcher, keyring, llm, resolveLlm,
-  search: braveKey ? new CachedSearch(new BraveSearch(braveKey), globalPool) : null,
+  search: environmentSearch, resolveSearch: (tenantId) => sources.search(tenantId, environmentSearch),
 });
-// Contact data vendors are added here as their contracts are signed (ADR-015); none ship by default.
+// Workspace sources use tenant-owned credentials and do not populate the shared contact cache.
 registerQualification({
   pool, llm, resolveLlm, pages: fetcherPageSource(fetcher),
-  contacts: { pool, global: globalPool, keyring, platform: PlatformKeys.fromEnv(), providers: [] },
+  contacts: contactDeps, resolveContacts: (tenantId) => sources.contacts(tenantId, contactDeps),
 });
 const mailer = mailerFromEnv();
 if (!mailer.enabled) console.warn("POSTMARK_SERVER_TOKEN/NOTIFY_FROM_EMAIL not set: notifications stay in-app (email skipped)");

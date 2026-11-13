@@ -12,6 +12,7 @@ const links = [
   { href: "/setup", label: "Setup", icon: "sliders", group: "Workspace" },
   { href: "/agents", label: "Agents", icon: "spark", group: "Workspace" },
   { href: "/imports", label: "Import", icon: "upload", group: "Workspace", admin: true },
+  { href: "/sources", label: "Sources", icon: "search", group: "Manage", owner: true },
   { href: "/llm", label: "AI / LLM", icon: "spark", group: "Manage", owner: true },
   { href: "/usage", label: "Usage", icon: "chart", group: "Manage" },
   { href: "/team", label: "Team", icon: "team", group: "Manage" },
