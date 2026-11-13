@@ -12,6 +12,7 @@ import { agentQueue } from "../queues.js";
 export type QualificationWorkerDeps = {
   pool: ContactDataDeps["pool"];
   llm: LlmGateway | null;
+  resolveLlm?: (tenantId: string) => Promise<LlmGateway | null>;
   pages?: PageSource;
   contacts: ContactDataDeps;
 };
@@ -27,8 +28,9 @@ const step = <T>(name: string, fn: () => Promise<T>) => DBOS.runStep(fn, { name 
  * candidate is qualified once and a scorecard triggers one lookup however often events are redelivered.
  */
 export function registerQualification(deps: QualificationWorkerDeps) {
+  const resolveLlm = (tenantId: string) => deps.resolveLlm ? deps.resolveLlm(tenantId) : Promise.resolve(deps.llm);
   async function qualify(tenantId: string, candidateId: string, eventId: string) {
-    return qualifyCandidate({ pool: deps.pool, llm: deps.llm, pages: deps.pages, step }, tenantId, candidateId, { eventId });
+    return qualifyCandidate({ pool: deps.pool, llm: await resolveLlm(tenantId), pages: deps.pages, step }, tenantId, candidateId, { eventId });
   }
   const qualifyWf = DBOS.registerWorkflow(qualify, { name: "qualifyCandidate" });
 
@@ -48,7 +50,7 @@ export function registerQualification(deps: QualificationWorkerDeps) {
       }
     }
     // Q1 step 5: with ≥ 1 contact, W1 writes the first email and the card goes to the inbox.
-    return proposeCard({ pool: deps.pool, keyring: deps.contacts.keyring, llm: deps.llm, messagingFor, step }, tenantId, candidateId);
+    return proposeCard({ pool: deps.pool, keyring: deps.contacts.keyring, llm: await resolveLlm(tenantId), messagingFor, step }, tenantId, candidateId);
   }
   const contactsWf = DBOS.registerWorkflow(findForScorecard, { name: "findContactsForScorecard" });
 
@@ -58,7 +60,7 @@ export function registerQualification(deps: QualificationWorkerDeps) {
   const manualWf = DBOS.registerWorkflow(manualLookup, { name: "manualContactLookup" });
 
   async function preview(tenantId: string, previewId: string) {
-    await runPreview({ pool: deps.pool, llm: deps.llm, step }, tenantId, previewId);
+    await runPreview({ pool: deps.pool, llm: await resolveLlm(tenantId), step }, tenantId, previewId);
   }
   const previewWf = DBOS.registerWorkflow(preview, { name: "playbookPreview" });
 

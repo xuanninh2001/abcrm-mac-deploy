@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { generateKey, LocalKeyProvider } from "@abcrm/crypto";
 import { TenantKeyring } from "@abcrm/core";
 import { withTenant } from "@abcrm/db";
@@ -12,6 +12,7 @@ import { launchEngine, shutdownEngine } from "../src/engine.js";
 import { dispatchOnce } from "../src/dispatcher.js";
 import { registerSourcing } from "../src/workflows/sourcing.js";
 
+const resolveLlm = vi.fn(async (_tenantId: string) => null);
 let t: TestDb;
 let server: Server;
 let base: string;
@@ -35,7 +36,7 @@ beforeAll(async () => {
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   fetcher = new Fetcher(t.global, { userAgent: "ABCRMBot/test", allowPrivate: true, minIntervalMs: 0 });
   const search: SearchProvider = { name: "proxy", search: (q) => provider.current!.search(q) };
-  registerSourcing({ pool: t.app, fetcher, keyring: new TenantKeyring(new LocalKeyProvider(generateKey())), siteUrl: (d: string) => `${base}/${d}/`,
+  registerSourcing({ pool: t.app, fetcher, resolveLlm, keyring: new TenantKeyring(new LocalKeyProvider(generateKey())), siteUrl: (d: string) => `${base}/${d}/`,
     get search() { return provider.current ? search : null; } } as never);
   await launchEngine(t.adminUrl);
   const { playbook, ipp } = await withTenant(t.app, t.tenantA, actor, (tx) => cloneFromPack(tx, actor, "insurance", "ACA & FE data-lead buyers"));
@@ -62,6 +63,7 @@ describe("sourcing workflow", () => {
     const run = await withTenant(t.app, t.tenantA, actor, (tx) => createRun(tx, actor, { ippId, targetCount: 2, agentCreditBudget: 100, contactCreditBudget: 10 }));
     const done = await waitForStatus(run.id, ["completed", "failed", "budget_exhausted"]);
     expect(done).toMatchObject({ status: "completed", stats: { found: 2 } });
+    expect(resolveLlm).toHaveBeenCalledWith(t.tenantA);
   });
 
   it("fails clearly when no search provider is configured", async () => {

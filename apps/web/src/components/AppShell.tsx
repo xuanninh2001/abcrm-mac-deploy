@@ -12,6 +12,7 @@ const links = [
   { href: "/setup", label: "Setup", icon: "sliders", group: "Workspace" },
   { href: "/agents", label: "Agents", icon: "spark", group: "Workspace" },
   { href: "/imports", label: "Import", icon: "upload", group: "Workspace", admin: true },
+  { href: "/llm", label: "AI / LLM", icon: "spark", group: "Manage", owner: true },
   { href: "/usage", label: "Usage", icon: "chart", group: "Manage" },
   { href: "/team", label: "Team", icon: "team", group: "Manage" },
   { href: "/notifications", label: "Notifications", icon: "bell", group: "Manage" },
@@ -44,7 +45,7 @@ export function AppShell({ children, name, role, unread }: { children: ReactNode
       <nav className="nav" aria-label="Main">
         {["Workspace", "Manage"].map(group => <div className="nav-group" key={group}>
           <p className="nav-heading">{group}</p>
-          {links.filter(l => l.group === group && (!l.admin || canManage)).map(l => <Link key={l.href} href={l.href}
+          {links.filter(l => l.group === group && (!l.admin || canManage) && (!l.owner || role === "owner")).map(l => <Link key={l.href} href={l.href}
             onClick={() => setOpen(false)} aria-current={current?.href === l.href ? "page" : undefined}>
             <NavIcon name={l.icon} /><span>{l.label}</span>
             {l.href === "/notifications" && unread > 0 && <span className="count" aria-label={`${unread} unread`}>{unread > 99 ? "99+" : unread}</span>}

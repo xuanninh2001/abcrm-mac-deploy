@@ -53,6 +53,9 @@ importers:
       '@abcrm/inbox':
         specifier: workspace:*
         version: link:../../packages/inbox
+      '@abcrm/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@abcrm/notify':
         specifier: workspace:*
         version: link:../../packages/notify
@@ -77,10 +80,6 @@ importers:
       zod:
         specifier: 4.6.7
         version: 4.6.7
-    devDependencies:
-      '@abcrm/llm':
-        specifier: workspace:*
-        version: link:../../packages/llm
 
   apps/web:
     dependencies:

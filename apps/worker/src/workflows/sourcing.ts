@@ -1,10 +1,11 @@
 import { DBOS } from "@dbos-inc/dbos-sdk";
 import { withTenant } from "@abcrm/db";
 import { runSourcing, type EngineDeps, type SearchProvider } from "@abcrm/sourcing";
+import type { LlmGateway } from "@abcrm/llm";
 import { onEvent } from "../dispatcher.js";
 import { agentQueue } from "../queues.js";
 
-export type SourcingWorkerDeps = Omit<EngineDeps, "step" | "search"> & { search: SearchProvider | null };
+export type SourcingWorkerDeps = Omit<EngineDeps, "step" | "search"> & { search: SearchProvider | null; resolveLlm?: (tenantId: string) => Promise<LlmGateway | null> };
 
 /**
  * Registers the sourcing workflow and its trigger (`sourcing.run.queued`). Each engine step is a DBOS step,
@@ -18,7 +19,8 @@ export function registerSourcing(deps: SourcingWorkerDeps) {
          WHERE id = $1 AND status IN ('queued', 'running')`, [runId])), { name: "noProvider" });
       return { status: "failed" };
     }
-    return runSourcing({ ...deps, search: deps.search, step: (name, fn) => DBOS.runStep(fn, { name }) }, tenantId, runId);
+    const llm = deps.resolveLlm ? await deps.resolveLlm(tenantId) : deps.llm;
+    return runSourcing({ ...deps, llm, search: deps.search, step: (name, fn) => DBOS.runStep(fn, { name }) }, tenantId, runId);
   }
   const wf = DBOS.registerWorkflow(sourcingRun, { name: "sourcingRun" });
 

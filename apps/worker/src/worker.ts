@@ -1,9 +1,9 @@
 import { TenantKeyring } from "@abcrm/core";
 import { keyProviderFromEnv } from "@abcrm/crypto";
-import { createPool } from "@abcrm/db";
+import { createPool, withTenant } from "@abcrm/db";
 import { BraveSearch, CachedSearch, Fetcher, fetcherPageSource } from "@abcrm/sourcing";
 import { PlatformKeys } from "@abcrm/contactdata";
-import { llmFromEnv } from "@abcrm/llm";
+import { llmFromEnv, tenantLlm } from "@abcrm/llm";
 import { launchEngine, shutdownEngine } from "./engine.js";
 import { startDispatcher } from "./dispatcher.js";
 import { registerDecisionWait } from "./workflows/decision-wait.js";
@@ -32,18 +32,19 @@ const braveKey = process.env.BRAVE_SEARCH_API_KEY;
 if (!braveKey) console.warn("BRAVE_SEARCH_API_KEY not set: sourcing runs will fail with 'search provider not configured'");
 
 const llm = llmFromEnv();
-if (!llm) console.warn("ANTHROPIC_API_KEY not set: S1 uses rule-based examine only; Q1 marks AI criteria unknown");
+if (!llm) console.warn("Environment Claude credentials absent; workspace LLM settings will be checked for each workflow.");
 const keyring = new TenantKeyring(keyProviderFromEnv());
+const resolveLlm = (tenantId: string) => withTenant(pool, tenantId, { type: "system", id: "llm-settings" }, tx => tenantLlm(tx, keyring));
 
 // Workflows and event handlers must be registered before launch so DBOS can recover them.
 registerDecisionWait(pool);
 registerSourcing({
-  pool, fetcher, keyring, llm,
+  pool, fetcher, keyring, llm, resolveLlm,
   search: braveKey ? new CachedSearch(new BraveSearch(braveKey), globalPool) : null,
 });
 // Contact data vendors are added here as their contracts are signed (ADR-015); none ship by default.
 registerQualification({
-  pool, llm, pages: fetcherPageSource(fetcher),
+  pool, llm, resolveLlm, pages: fetcherPageSource(fetcher),
   contacts: { pool, global: globalPool, keyring, platform: PlatformKeys.fromEnv(), providers: [] },
 });
 const mailer = mailerFromEnv();

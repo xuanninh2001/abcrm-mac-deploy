@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { generateKey, LocalKeyProvider } from "@abcrm/crypto";
 import { TenantKeyring, uuidv7 } from "@abcrm/core";
 import { withTenant } from "@abcrm/db";
@@ -34,6 +34,8 @@ const llm = new ScriptedLlm({
     personalization_basis: ["buys_matching_lead_types"] }),
 });
 
+const resolveLlm = vi.fn(async (_tenantId: string) => llm);
+
 beforeAll(async () => {
   t = await setupTestDb();
   await t.admin.query("INSERT INTO abcrm.users(id, tenant_id, workos_user_id, email, role) VALUES ($1, $2, 'h', 'h@a.vn', 'head_of_bd')", [userId, t.tenantA]);
@@ -43,7 +45,7 @@ beforeAll(async () => {
     "buyer.com": [{ firstName: "Ann", lastName: "Lee", title: "Affiliate Manager", email: "ann@buyer.com" },
       { firstName: "Bo", lastName: "Kim", title: "Director of Partnerships", email: "bo@buyer.com" }],
   });
-  registerQualification({ pool: t.app, llm, contacts: { pool: t.app, global: t.global, keyring, platform: new PlatformKeys(generateKey(), generateKey()), providers: [provider] } });
+  registerQualification({ pool: t.app, llm: null, resolveLlm, contacts: { pool: t.app, global: t.global, keyring, platform: new PlatformKeys(generateKey(), generateKey()), providers: [provider] } });
   await launchEngine(t.adminUrl);
   const ids = await withTenant(t.app, t.tenantA, actor, async (tx) => {
     const { playbook, ipp } = await cloneFromPack(tx, actor, "insurance", "ACA & FE data-lead buyers");
@@ -103,6 +105,8 @@ describe("qualification workflows", () => {
     expect(card).toEqual({ gate_id: "G-Q", status: "pending" });
     const drafts = await t.admin.query("SELECT ed.status FROM abcrm.email_drafts ed JOIN abcrm.decisions d ON d.id = ed.decision_id JOIN abcrm.candidates c ON c.account_id = ed.account_id WHERE c.id = $1", [candidateId]);
     expect(drafts.rows).toEqual([{ status: "proposed" }]);
+    expect(resolveLlm).toHaveBeenCalledWith(t.tenantA);
+    expect(resolveLlm.mock.calls.length).toBeGreaterThanOrEqual(2);
     const stats = (await t.admin.query("SELECT stats FROM abcrm.sourcing_runs WHERE id = $1", [runId])).rows[0].stats;
     expect(stats).toMatchObject({ qualified: 1, contact_credits_used: 2, carded: 1 });
   });

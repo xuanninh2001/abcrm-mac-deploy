@@ -1,4 +1,6 @@
 export * from "./types.js";
+export { RouterGateway } from "./router.js";
+export { settingsSchema, readLlmSettings, saveLlmSettings, prepareLlmSettings, tenantLlm } from "./settings.js";
 export { AnthropicGateway, type AnthropicGatewayOptions } from "./anthropic.js";
 export { ScriptedLlm, type ScriptedCall, type ScriptHandler } from "./scripted.js";
 export { PLATFORM_RULES, untrusted } from "./prompt.js";
